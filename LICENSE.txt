@@ -1,0 +1,57 @@
+Interactive Networking Laboratory - Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing
+
+Copyright (c) 2026 Domenico Capano
+
+This work is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0).
+
+SPDX-License-Identifier: CC-BY-4.0
+
+To view a copy of this license, visit:
+https://creativecommons.org/licenses/by/4.0/
+
+You are free to:
+
+  - Share — copy and redistribute the material in any medium or format
+  - Adapt — remix, transform, and build upon the material
+  - for any purpose, even commercially.
+
+Under the following terms:
+
+  - Attribution — You must give appropriate credit, provide a link to the
+    license, and indicate if changes were made. You may do so in any
+    reasonable manner, but not in any way that suggests the licensor
+    endorses you or your use.
+  - No additional restrictions — You may not apply legal terms or
+    technological measures that legally restrict others from doing
+    anything the license permits.
+
+No warranties are given. The license may not give you all of the
+permissions necessary for your intended use. For example, other rights
+such as publicity, privacy, or moral rights may limit how you use the
+material.
+
+------------------------------------------------------------------------
+
+Recommended attribution (Version 1.1):
+
+Capano, D. (2026). Interactive Networking Laboratory – Educational
+Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing,
+Version 1.1. Zenodo. DOI_VERSIONE_1_1_DA_INSERIRE
+
+NOTE: DOI_VERSIONE_1_1_DA_INSERIRE must be replaced with the specific DOI
+assigned by Zenodo to Version 1.1 before final publication. Do not reuse
+the DOI of the previous version below for Version 1.1.
+
+Previous version 1.0: https://doi.org/10.5281/zenodo.19066947
+
+------------------------------------------------------------------------
+
+Author: Domenico Capano
+Year: 2026
+Title: Interactive Networking Laboratory - Educational Simulators for
+       ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing
+Publisher: Zenodo
+DOI (Version 1.1, current): 10.5281/zenodo.21299699
+DOI (Version 1.0, previous): 10.5281/zenodo.19066947
+Website: https://www.learningobjects.org
