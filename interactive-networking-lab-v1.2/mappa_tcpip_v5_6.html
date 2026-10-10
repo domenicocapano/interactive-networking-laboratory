@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="author" content="Domenico Capano">
+<meta name="license" content="CC-BY-4.0">
+<meta name="description" content="Mappa concettuale interattiva ISO/OSI e TCP/IP, componente del pacchetto Interactive Networking Laboratory (NetLab v5.6).">
+<meta name="citation_title" content="Interactive Networking Laboratory – Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing">
+<meta name="citation_author" content="Capano, Domenico">
+<meta name="citation_publication_date" content="2026">
+<title>Mappa Concettuale TCP/IP - NetLab v5.6</title>
+<style>
+  :root{
+    --border:#d8dee8; --border-strong:#6d93bb; --text:#1f2937; --text-soft:#4b5563;
+    --shadow:0 8px 22px rgba(16,24,40,.08); --blue:#B5D4F4; --blue-t:#042C53;
+    --teal:#9FE1CB; --teal-t:#04342C; --amber:#FAC775; --amber-t:#412402;
+    --coral:#F5C4B3; --coral-t:#4A1B0C; --purple:#CECBF6; --purple-t:#26215C;
+    --green:#C0DD97; --green-t:#173404; --red:#F7C1C1; --red-t:#501313;
+    --gray:#D3D1C7; --gray-t:#2C2C2A; --gold:#ffe7a8; --gold-t:#5c4200; --stage:#eef6ff;
+    --zoom:1;
+  }
+  /* zoom applicato con la proprietà CSS "zoom" (non font-size) perché questa pagina
+     usa molte dimensioni in px fissi, non solo rem: "zoom" scala tutto in blocco
+     esattamente come lo zoom nativo del browser, mantenendo corretto il layout. */
+  html{zoom:var(--zoom);}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f7fafc;color:var(--text)}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 42px}
+  h1{text-align:center;margin:0 0 10px;font-size:2.1rem}
+  .subtitle{text-align:center;color:var(--text-soft);margin:0 0 18px;line-height:1.6;font-size:1.08rem}
+  .map-tools,.sim-tools{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 auto 18px}
+  .tool-btn{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:12px;padding:11px 15px;font-size:16px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .tool-btn:hover,.tool-btn:focus-visible{outline:2px solid var(--border-strong);outline-offset:2px}
+  .tool-btn.active-mode{background:var(--stage);border-color:var(--border-strong);font-weight:700}
+  .row-label{font-size:13px;color:#6b7280;text-align:center;margin:0 0 7px;letter-spacing:.06em;font-weight:700}
+  .map-row{display:flex;justify-content:center;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+  .node-btn{border:none;cursor:pointer;border-radius:14px;padding:15px 18px;font-size:18px;font-weight:700;line-height:1.35;text-align:center;transition:transform .1s ease, box-shadow .15s ease, opacity .15s ease;min-width:150px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+  .node-btn:hover{transform:translateY(-2px)} .node-btn:active{transform:scale(.98)}
+  .node-btn.active,.node-btn:focus-visible{outline:4px solid var(--border-strong);outline-offset:3px}
+  .node-btn.dimmed{opacity:.42} .node-btn.highlight{box-shadow:0 0 0 4px rgba(109,147,187,.2), 0 6px 18px rgba(0,0,0,.08)}
+  .c-blue{background:var(--blue);color:var(--blue-t)} .c-teal{background:var(--teal);color:var(--teal-t)}
+  .c-amber{background:var(--amber);color:var(--amber-t)} .c-coral{background:var(--coral);color:var(--coral-t)}
+  .c-purple{background:var(--purple);color:var(--purple-t)} .c-green{background:var(--green);color:var(--green-t)}
+  .c-red{background:var(--red);color:var(--red-t)} .c-gray{background:var(--gray);color:var(--gray-t)} .c-gold{background:var(--gold);color:var(--gold-t)}
+  .connector-row{display:flex;justify-content:center;align-items:center;height:28px;margin-bottom:3px}
+  .arr-down{width:3px;height:20px;background:#9aa8b8;position:relative}
+  .arr-down::after{content:'';position:absolute;left:-5px;bottom:-6px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #9aa8b8}
+  .detail-panel,.sim-panel{display:none;max-width:840px;margin:20px auto 0;border:1px solid var(--border);border-radius:16px;background:#fff;padding:20px 24px;box-shadow:var(--shadow)}
+  .detail-panel.visible,.sim-panel.visible{display:block}
+  .panel-title{margin:0 0 10px;font-size:1.45rem;font-weight:700}
+  .panel-body{font-size:18px;line-height:1.78;color:var(--text)}
+  .tag{display:inline-block;border-radius:8px;padding:3px 10px;font-size:14px;font-weight:700;margin:3px 5px 3px 0}
+  .mini-path{margin-top:14px;padding:14px 16px;border:1px dashed var(--border-strong);border-radius:12px;background:#f8fbff;font-size:17px;line-height:1.7}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin:20px auto 0;max-width:840px;justify-content:center}
+  .leg{display:flex;align-items:center;gap:7px;font-size:15px;color:var(--text-soft);background:#fff;padding:8px 12px;border-radius:999px;border:1px solid var(--border)}
+  .leg-dot{width:13px;height:13px;border-radius:4px;flex-shrink:0}
+  .help-box{max-width:840px;margin:24px auto 0;border:1px solid var(--border);border-radius:16px;background:#fff;padding:18px 20px;line-height:1.8;color:var(--text-soft);font-size:17px}
+  .sim-choice{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .sim-box{border:1px solid var(--border);background:#fbfdff;border-radius:14px;padding:18px}
+  .sim-stage{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin:16px 0}
+  .sim-node{padding:14px 16px;border-radius:12px;font-size:17px;font-weight:700;min-width:130px;text-align:center;border:2px solid transparent}
+  .sim-node.active{border-color:var(--border-strong);box-shadow:0 0 0 4px rgba(109,147,187,.12)}
+  .arrow{font-size:28px;color:#6b7280;font-weight:700}
+  .sim-log{margin-top:12px;padding:14px 16px;background:#f8fbff;border-radius:12px;font-size:17px;line-height:1.7;border:1px dashed var(--border-strong);min-height:60px}
+  .sim-kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .sim-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:16px;line-height:1.6}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media (max-width:700px){
+    h1{font-size:1.7rem}.subtitle{font-size:1rem}.node-btn{min-width:unset;width:100%;font-size:18px}
+    .map-row{gap:10px}.panel-body{font-size:17px}.sim-kv{grid-template-columns:1fr}
+  }
+  @media (max-width:480px){
+    .wrap{padding:16px 10px 32px}
+    h1{font-size:1.4rem}.subtitle{font-size:.9rem}
+    .node-btn{font-size:16px;padding:12px 14px}
+    .tool-btn{font-size:14px;padding:9px 12px}
+    .sim-node{min-width:unset;font-size:15px;padding:11px 12px}
+    .panel-title{font-size:1.2rem}
+    .detail-panel,.sim-panel,.legend,.help-box{padding-left:14px;padding-right:14px;}
+  }
+
+  /* ── NAV SITO NETLAB ── */
+  .site-hdr{background:linear-gradient(90deg,#0046a8,#0069d9);color:#fff;
+    border-radius:10px;padding:10px 16px;margin-bottom:12px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  .site-hdr h2{font-size:1rem;font-weight:800;}
+  .site-hdr .credit{font-size:.72rem;opacity:.85;margin-top:2px;}
+  .site-hdr .credit a{color:#ffe082;text-decoration:none;font-weight:700;}
+  .site-hdr .credit a:hover{text-decoration:underline;}
+  .site-hdr .version-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+    border-radius:5px;padding:2px 9px;font-size:.7rem;font-weight:700;}
+  .zoom-ctrl{display:flex;gap:2px;background:rgba(255,255,255,.14);border-radius:6px;padding:2px;}
+  .zoom-ctrl button{background:transparent;color:#fff;border:none;padding:5px 10px;
+    font-size:13px;font-weight:800;border-radius:4px;cursor:pointer;}
+  .zoom-ctrl button:hover{background:rgba(255,255,255,.22);}
+  .site-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .site-nav-link{padding:7px 14px;border-radius:6px;background:#fff;border:1px solid #d8dee8;
+    color:#0046a8;font-size:14px;font-weight:700;text-decoration:none;transition:all .18s;}
+  .site-nav-link:hover{background:#eef4ff;}
+  .site-nav-link.active{background:#0046a8;color:#fff;border-color:#0046a8;}
+
+  .arp-terminal{
+    display:none;
+    overflow-x:auto;
+    max-width:840px;
+    margin:14px auto 0;
+    border:1px solid #1a1a1a;
+    border-radius:6px;
+    background:#0c0c0c;
+    color:#cccccc;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);
+    font-family:Consolas,"Courier New",monospace;
+    font-size:14px;
+    line-height:1.6;
+  }
+  .arp-terminal.visible{display:block}
+  .win-titlebar{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#1e1e1e;padding:8px 12px;border-radius:6px 6px 0 0;
+    border-bottom:1px solid #333;user-select:none;
+  }
+  .win-titlebar-left{display:flex;align-items:center;gap:8px;}
+  .win-icon{width:16px;height:16px;background:#000;border:1px solid #555;
+    display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa;}
+  .win-title{font-family:"Segoe UI",Arial,sans-serif;font-size:12px;color:#cccccc;font-weight:400;}
+  .win-btns{display:flex;gap:1px;}
+  .win-btn{width:46px;height:28px;background:transparent;border:none;cursor:default;
+    font-family:"Segoe UI",monospace;font-size:16px;color:#cccccc;display:flex;
+    align-items:center;justify-content:center;border-radius:0;}
+  .win-btn:hover{background:#404040;}
+  .win-btn.close:hover{background:#c42b1c;color:#fff;}
+  .win-body{padding:6px 14px 14px;white-space:pre-wrap;min-height:80px;}
+  .t-prompt{color:#cccccc;}
+  .t-cmd{color:#ffffff;font-weight:700;}
+  .t-head{color:#13a10e;}
+  .t-key{color:#8ec7f0;}
+  .t-val{color:#ffffff;}
+  .t-dot{color:#555555;}
+  .t-sep{color:#555555;}
+  .t-warn{color:#f9f1a5;}
+  .t-err{color:#e74856;}
+  .t-ok{color:#13a10e;}
+  .t-dim{color:#767676;}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .cursor{display:inline-block;width:8px;height:14px;background:#cccccc;
+    vertical-align:text-bottom;animation:blink 1s step-end infinite;}
+  /* ── JUMP NAV ── */
+  .jump-nav{position:sticky;top:0;z-index:50;background:#fff;border:1px solid var(--border);
+    border-radius:10px;padding:8px 10px;margin:0 0 18px;display:flex;gap:6px;flex-wrap:wrap;
+    justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .jump-nav a{font-size:13px;font-weight:700;color:#0046a8;text-decoration:none;
+    padding:5px 10px;border-radius:7px;background:#eef4ff;white-space:nowrap;}
+  .jump-nav a:hover{background:#dbe8ff;}
+  #top-btn{position:fixed;bottom:16px;left:16px;z-index:500;
+    background:#0d1a2e;color:#9fd3ff;border:2px solid #1e3a5f;border-radius:50%;
+    width:44px;height:44px;font-size:1.15rem;cursor:pointer;
+    box-shadow:0 4px 16px rgba(0,0,0,.35);transition:all .2s;
+    opacity:0;pointer-events:none;transform:translateY(8px);
+    display:flex;align-items:center;justify-content:center;}
+  #top-btn.show{opacity:1;pointer-events:auto;transform:none;}
+  #top-btn:hover{background:#1a3a6e;transform:translateY(-2px);}
+  @media (max-width:640px){
+    .jump-nav{position:static;} /* su mobile lo sticky ruba troppo spazio verticale */
+    .jump-nav a{font-size:12px;padding:5px 8px;}
+  }
+  @media (min-width:1300px){
+    .wrap{max-width:1280px;}
+    h1{font-size:2.35rem;}
+    .subtitle{font-size:1.15rem;}
+    .panel-body{font-size:19px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="site-hdr">
+    <div>
+      <h2>🔬 NetLab — Mappa Concettuale TCP/IP</h2>
+      <p class="credit">📚 Una risorsa di <a href="https://www.learningobjects.org" target="_blank" rel="noopener">LearningObjects.org</a></p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="zoom-ctrl" title="Dimensione di tutta la pagina">
+        <button id="zoom-out" type="button">A−</button>
+        <button id="zoom-reset" type="button">A</button>
+        <button id="zoom-in" type="button">A+</button>
+      </div>
+      <span class="version-badge">v5.6</span>
+    </div>
+  </div>
+  <div class="site-nav">
+    <a href="netlab_v5_6.html" class="site-nav-link">📡 Simulatore</a>
+    <a href="glossario.html" class="site-nav-link">📖 Glossario &amp; Comandi</a>
+    <span class="site-nav-link active">🗺️ Mappa Concettuale</span>
+  </div>
+
+  <h1>Mappa concettuale del modello TCP/IP</h1>
+  <p class="subtitle">Versione avanzata con caratteri grandi, modalità studente/docente e cinque mini simulazioni didattiche integrate — pensata come approfondimento del <a href="netlab_v5_6.html" style="color:var(--border-strong)">simulatore NetLab</a>.</p>
+
+  <div class="map-tools" aria-label="Strumenti mappa">
+    <button type="button" id="openFirstBtn" class="tool-btn">Apri introduzione</button>
+    <button type="button" id="closeDetailBtn" class="tool-btn">Chiudi dettaglio</button>
+    <button type="button" id="copySummaryBtn" class="tool-btn">Copia sintesi</button>
+    <button type="button" id="modeBtn" class="tool-btn">Modalità docente</button>
+    <button type="button" id="printBtn" class="tool-btn">Apri sintesi stampabile</button>
+    <button type="button" id="osiToggleBtn" class="tool-btn" style="border-color:#6d93bb;font-weight:700">🔄 Vista: TCP/IP (4 livelli)</button>
+  </div>
+
+  <!-- JUMP NAV: indice rapido di navigazione -->
+  <nav class="jump-nav" aria-label="Indice rapido">
+    <a href="#sec-problema">1. Problema</a>
+    <a href="#sec-livelli">2. Livelli</a>
+    <a href="#sec-flusso">3. Flusso dati</a>
+    <a href="#sec-meccanismi">4. Meccanismi</a>
+    <a href="#sec-errori">5. Errori</a>
+    <a href="#sec-simulazioni">6. Simulazioni</a>
+    <a href="#sec-legenda">7. Legenda</a>
+  </nav>
+
+  <h2 class="sr-only">Mappa concettuale del modello TCP/IP</h2>
+
+  <div id="sec-problema">
+  <div class="row-label">PROBLEMA DI PARTENZA</div>
+  <div class="map-row"><button class="node-btn c-gray" data-panel="prob" data-group="base">Come comunicano reti diverse?</button></div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  <div class="row-label">SOLUZIONE</div>
+  <div class="map-row"><button class="node-btn c-blue" data-panel="tcpip" data-group="base" style="min-width:240px;">Modello TCP/IP</button></div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  <div class="row-label">CONCETTO BASE</div>
+  <div class="map-row"><button class="node-btn c-purple" data-panel="livprot" data-group="base">Livello ≠ Protocollo</button></div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  </div>
+
+  <div id="sec-livelli">
+  <div class="row-label" id="livelli-row-label">I 4 LIVELLI (TCP/IP)</div>
+  <div class="map-row model-tcpip">
+    <button class="node-btn c-teal" data-panel="app" data-group="livelli">Applicazione</button>
+    <button class="node-btn c-green" data-panel="tra" data-group="livelli">Trasporto</button>
+    <button class="node-btn c-amber" data-panel="int" data-group="livelli">Internet</button>
+    <button class="node-btn c-coral" data-panel="acc" data-group="livelli">Accesso rete</button>
+  </div>
+  <div class="connector-row model-tcpip"><div class="arr-down"></div></div>
+  <div class="row-label model-tcpip">PROTOCOLLI PRINCIPALI</div>
+  <div class="map-row model-tcpip">
+    <button class="node-btn c-teal" data-panel="proto-app" data-group="protocolli" style="font-size:15px;">HTTP · HTTPS · FTP · DNS · SMTP</button>
+    <button class="node-btn c-green" data-panel="proto-tra" data-group="protocolli" style="font-size:15px;">TCP · UDP</button>
+    <button class="node-btn c-amber" data-panel="proto-int" data-group="protocolli" style="font-size:15px;">IP · ICMP</button>
+    <button class="node-btn c-coral" data-panel="proto-acc" data-group="protocolli" style="font-size:15px;">Ethernet · Wi‑Fi · ARP</button>
+  </div>
+
+  <div class="map-row model-osi" style="display:none">
+    <button class="node-btn c-teal"  data-panel="osi-app"  data-group="osi">7. Applicazione</button>
+    <button class="node-btn c-teal"  data-panel="osi-pres" data-group="osi">6. Presentazione</button>
+    <button class="node-btn c-teal"  data-panel="osi-sess" data-group="osi">5. Sessione</button>
+    <button class="node-btn c-green" data-panel="osi-tra"  data-group="osi">4. Trasporto</button>
+    <button class="node-btn c-amber" data-panel="osi-rete" data-group="osi">3. Rete</button>
+    <button class="node-btn c-coral" data-panel="osi-coll" data-group="osi">2. Collegamento</button>
+    <button class="node-btn c-coral" data-panel="osi-fis"  data-group="osi">1. Fisico</button>
+  </div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  </div><!-- /sec-livelli -->
+
+  <div id="sec-flusso">
+  <div class="row-label">COME VIAGGIANO I DATI</div>
+  <div class="map-row">
+    <button class="node-btn c-blue" data-panel="incaps" data-group="flusso">Incapsulamento</button>
+    <button class="node-btn c-blue" data-panel="routing" data-group="flusso">Routing hop-by-hop</button>
+    <button class="node-btn c-blue" data-panel="ipmac" data-group="flusso">IP fisso · MAC variabile</button>
+  </div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  </div>
+
+  <div id="sec-meccanismi">
+  <div class="row-label">MECCANISMI SPECIALI</div>
+  <div class="map-row">
+    <button class="node-btn c-gold" data-panel="nat" data-group="speciali">NAT</button>
+    <button class="node-btn c-purple" data-panel="dns" data-group="speciali">DNS</button>
+    <button class="node-btn c-teal" data-panel="tls" data-group="speciali">HTTPS · TLS</button>
+  </div>
+  <div class="connector-row"><div class="arr-down"></div></div>
+  </div>
+
+  <div id="sec-errori">
+  <div class="row-label">ERRORI FREQUENTI</div>
+  <div class="map-row"><button class="node-btn c-red" data-panel="err" data-group="errori">Errori tipici da evitare</button></div>
+  </div>
+
+  <div id="detail" class="detail-panel" aria-live="polite" aria-hidden="true"></div>
+
+  <div id="sec-simulazioni"></div>
+  <div class="sim-panel visible" id="simPanel">
+    <p class="panel-title">Mini simulazioni didattiche</p>
+    <div class="sim-choice">
+      <button class="tool-btn" data-sim="incaps">Simulazione incapsulamento</button>
+      <button class="tool-btn" data-sim="routing">Simulazione routing</button>
+      <button class="tool-btn" data-sim="dns">Simulazione DNS</button>
+      <button class="tool-btn" data-sim="arp">Simulazione ARP</button>
+      <button class="tool-btn" data-sim="nextHop">Simulazione IP / MAC / next-hop</button>
+    </div>
+    <div class="sim-box">
+      <div class="sim-tools">
+		<button class="tool-btn" id="simPrevBtn">Passo indietro</button>
+		<button class="tool-btn" id="simNextBtn">Passo avanti</button>
+		<button class="tool-btn" id="simResetBtn">Reset</button>
+		<button class="tool-btn" id="simArpBtn">Simula arp -a</button>
+		<button class="tool-btn" id="simIpconfigBtn">Simula ipconfig /all</button>
+		<button class="tool-btn" id="simPingBtn">Simula ping</button>
+	</div>
+      <div id="simTitle" class="row-label" style="font-size:15px;margin-bottom:10px;">SIMULAZIONE INCAPSULAMENTO</div>
+      <div id="simStage" class="sim-stage"></div>
+      <div id="simLog" class="sim-log"></div>
+      <div id="simExtra" class="sim-kv"></div>
+      <div id="arpTerminal" class="arp-terminal" aria-live="polite">
+        <div class="win-titlebar">
+          <div class="win-titlebar-left">
+            <div class="win-icon">&#9642;</div>
+            <span class="win-title" id="terminalTitle">Prompt dei comandi</span>
+          </div>
+          <div class="win-btns">
+            <button class="win-btn" onclick="void(0)" title="Minimizza">&#8722;</button>
+            <button class="win-btn" onclick="void(0)" title="Ripristina">&#9723;</button>
+            <button class="win-btn close" onclick="document.getElementById('arpTerminal').classList.remove('visible')" title="Chiudi">&#10005;</button>
+          </div>
+        </div>
+        <div class="win-body" id="arpTerminalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-legenda" class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#9FE1CB"></div>Applicazione</div>
+    <div class="leg"><div class="leg-dot" style="background:#C0DD97"></div>Trasporto</div>
+    <div class="leg"><div class="leg-dot" style="background:#FAC775"></div>Internet</div>
+    <div class="leg"><div class="leg-dot" style="background:#F5C4B3"></div>Accesso rete</div>
+    <div class="leg"><div class="leg-dot" style="background:#B5D4F4"></div>Flusso dei dati</div>
+    <div class="leg"><div class="leg-dot" style="background:#FFE7A8"></div>Meccanismi speciali</div>
+    <div class="leg"><div class="leg-dot" style="background:#F7C1C1"></div>Errori tipici</div>
+  </div>
+
+  <div class="help-box"><strong>Uso consigliato.</strong> Le mini simulazioni non sostituiscono il simulatore di rete principale, ma aiutano a visualizzare cinque idee: incapsulamento, routing hop-by-hop, risoluzione DNS, risoluzione ARP e differenza tra IP finale, MAC locale e next-hop. Indirizzi e output dei terminali sono esempi simulati, non risultati di interrogazioni reali.</div>
+</div>
+
+<button id="top-btn" title="Torna in cima">⬆</button>
+
+<script>
+// Preferenze facoltative: la pagina funziona anche se lo storage è disabilitato.
+const safeStorage={
+  getItem(key){try{return window.localStorage.getItem(key);}catch(e){return null;}},
+  setItem(key,value){try{window.localStorage.setItem(key,value);}catch(e){}},
+  removeItem(key){try{window.localStorage.removeItem(key);}catch(e){}}
+};
+
+const panels = {
+  "osi-app":{title:"7. Applicazione (ISO/OSI)", student:"È il livello più vicino all'utente: qui girano browser, email, DNS. Protocolli: HTTP, HTTPS, FTP, SMTP, DNS.", teacher:"Fornisce servizi di rete direttamente alle applicazioni. Insieme a Presentazione e Sessione, corrisponde principalmente al livello Applicazione del modello TCP/IP.", path:"ISO/OSI → 7. Applicazione"},
+  "osi-pres":{title:"6. Presentazione (ISO/OSI)", student:"Traduce i formati dei dati, cifra e comprime (es. TLS/SSL, JPEG).", teacher:"Livello senza un vero corrispettivo isolato in TCP/IP: le sue funzioni (cifratura, formati) sono assorbite nel livello Applicazione di TCP/IP.", path:"ISO/OSI → 6. Presentazione"},
+  "osi-sess":{title:"5. Sessione (ISO/OSI)", student:"Apre, sincronizza e chiude le sessioni di comunicazione tra due host.", teacher:"Come la Presentazione, in TCP/IP le sue funzioni confluiscono nel livello Applicazione: TCP/IP non distingue Sessione/Presentazione/Applicazione come fa OSI.", path:"ISO/OSI → 5. Sessione"},
+  "osi-tra":{title:"4. Trasporto (ISO/OSI)", student:"Gestisce la comunicazione tra processi tramite le porte. TCP offre affidabilità e ordine; UDP invia datagrammi senza connessione.", teacher:"Corrisponde principalmente al livello Trasporto di TCP/IP per la comunicazione tra processi. TCP e UDP sono protocolli della suite TCP/IP: il confronto con OSI è funzionale, non una perfetta equivalenza.", path:"ISO/OSI → 4. Trasporto"},
+  "osi-rete":{title:"3. Rete (ISO/OSI)", student:"Indirizzamento IP, routing tra reti diverse, frammentazione, ICMP.", teacher:"Corrisponde principalmente al livello Internet di TCP/IP (confronto didattico, non equivalenza perfetta). Il Router lavora qui: legge l'IP, instrada, decrementa il TTL. ARP non appartiene a questo livello: opera al livello 2 Collegamento.", path:"ISO/OSI → 3. Rete"},
+  "osi-coll":{title:"2. Collegamento (ISO/OSI)", student:"Indirizzi MAC, frame Ethernet/Wi-Fi, controllo errori (FCS/CRC), ARP.", teacher:"Insieme al livello 1 Fisico, corrisponde principalmente al livello Accesso Rete di TCP/IP. Qui lavora lo Switch, e qui opera anche ARP: mette in relazione un indirizzo IPv4 con un indirizzo MAC tramite frame broadcast/unicast, senza mai attraversare i router.", path:"ISO/OSI → 2. Collegamento"},
+  "osi-fis":{title:"1. Fisico (ISO/OSI)", student:"Trasmissione dei bit grezzi sul mezzo fisico: cavi, hub, modem/DCE.", teacher:"Livello più basso: insieme al Collegamento forma l'Accesso Rete di TCP/IP. Il DCE (es. modem) opera SOLO qui, convertendo segnali — non instrada nulla.", path:"ISO/OSI → 1. Fisico"},
+  prob:{title:"Il problema di partenza", student:"Il tuo PC e un server remoto si trovano su reti diverse. Come fanno a comunicare? Grazie al modello TCP/IP.", teacher:"Il problema di partenza delle reti è far comunicare sistemi diversi, su reti diverse, usando regole comuni. Il modello TCP/IP organizza questa comunicazione in livelli e protocolli.", path:"Base → Problema"},
+  tcpip:{title:"Modello TCP/IP", student:"Il modello TCP/IP divide la comunicazione in 4 livelli: Applicazione, Trasporto, Internet, Accesso rete.", teacher:"Il modello TCP/IP è il riferimento pratico della rete reale. Ogni livello svolge un compito specifico e coopera con gli altri.", path:"Base → Soluzione"},
+  livprot:{title:"Livello ≠ Protocollo", student:"Il livello dice cosa si fa. Il protocollo dice come si fa.", teacher:"Un livello è un ruolo architetturale, un protocollo è una realizzazione concreta. Lo stesso livello può usare protocolli diversi, per esempio Ethernet o Wi‑Fi.", path:"Base → Concetto fondamentale"},
+  app:{title:"Livello Applicazione", student:"È il livello più vicino all’utente. Qui lavorano browser, email, DNS e altri servizi.", teacher:"Il livello Applicazione raccoglie le funzioni alte di ISO/OSI. Qui operano protocolli come HTTP, FTP, DNS, SMTP. Non gestisce MAC, bit o routing.", path:"Livelli → Applicazione"},
+  tra:{title:"Livello Trasporto", student:"Gestisce la comunicazione tra processi usando le porte. Qui trovi TCP e UDP.", teacher:"Il livello Trasporto distingue i processi tramite le porte. TCP offre affidabilità, ritrasmissione e controllo del flusso; UDP ha meno informazioni di controllo e non offre ritrasmissioni proprie.", path:"Livelli → Trasporto"},
+  int:{title:"Livello Internet", student:"Lavora con gli indirizzi IP e con il percorso dei dati.", teacher:"Il livello Internet usa IP per indirizzamento e routing. Il router legge l’IP di destinazione finale e decide il next-hop.", path:"Livelli → Internet"},
+  acc:{title:"Livello Accesso rete", student:"Qui trovi frame, MAC, FCS e trasmissione sul mezzo fisico.", teacher:"Il livello Accesso rete riunisce le funzioni dei livelli 1 e 2 ISO/OSI. Qui operano Ethernet e Wi‑Fi, con frame, MAC, FCS e bit sul mezzo.", path:"Livelli → Accesso rete"},
+  "proto-app":{title:"Protocolli del livello Applicazione", student:"HTTP/HTTPS per il web, FTP per file, DNS per i nomi, SMTP per email.", teacher:"Ogni applicazione usa il protocollo adatto al compito: HTTP/HTTPS per pagine web, FTP per file, DNS per tradurre nomi in IP, SMTP per inviare email.", path:"Protocolli → Applicazione"},
+  "proto-tra":{title:"TCP e UDP", student:"TCP offre affidabilità e ordine. UDP è senza connessione e non offre garanzie di consegna o ordine.", teacher:"TCP offre un flusso di byte ordinato, ritrasmissioni e controllo del flusso. UDP usa datagrammi e un’intestazione più semplice; la velocità effettiva dipende dalla rete e dall’applicazione.", path:"Protocolli → Trasporto"},
+  "proto-int":{title:"IP e ICMP", student:"IP indirizza e instrada i pacchetti, ICMP invia messaggi di controllo (es. ping).", teacher:"IP gestisce indirizzamento e routing, ICMP invia messaggi di controllo/errore. ARP non fa parte di questo livello: opera al livello Accesso Rete (vedi scheda dedicata).", path:"Protocolli → Internet"},
+  "proto-acc":{title:"Ethernet, Wi‑Fi e ARP", student:"Ethernet e Wi‑Fi trasportano i frame sulla LAN. ARP mette in relazione un indirizzo IPv4 con un indirizzo MAC, operando tramite frame di questo stesso livello.", teacher:"Ethernet è tipico delle reti cablate, Wi‑Fi di quelle wireless: stesso livello architetturale, protocolli diversi. ARP opera qui (non a livello Internet): le sue richieste broadcast non vengono instradate dai router, per questo viene talvolta descritto come protocollo \"di confine\" tra L2 e L3 pur appartenendo funzionalmente all'Accesso Rete.", path:"Protocolli → Accesso rete"},
+  incaps:{title:"Incapsulamento", student:"I dati ricevono informazioni di trasporto (segmento TCP o datagramma UDP), poi l'header IP e il frame del collegamento; sul mezzo viaggiano segnali.", teacher:"Alcuni livelli aggiungono informazioni di controllo: dati → segmento/datagramma → pacchetto IP → frame; il livello fisico trasmette segnali. Alla destinazione avviene il decapsulamento.", path:"Flusso dei dati → Incapsulamento"},
+  routing:{title:"Routing hop-by-hop", student:"Ogni router sceglie il next-hop consultando la tabella di instradamento.", teacher:"Il router legge l’IP finale, consulta la tabella di instradamento e inoltra il pacchetto al next-hop. Il percorso si costruisce passo dopo passo.", path:"Flusso dei dati → Routing"},
+  ipmac:{title:"IP fisso · MAC variabile", student:"L’IP identifica la destinazione finale. Il MAC identifica il dispositivo successivo nel tratto locale.", teacher:"Il router sostituisce il frame per il nuovo collegamento: nuovi MAC sulle LAN Ethernet, formato diverso sui collegamenti seriali. Senza NAT, gli indirizzi IP restano invariati; il TTL e il checksum dell’intestazione IPv4 cambiano.", path:"Flusso dei dati → IP e MAC"},
+  nat:{title:"NAT", student:"Il router può tradurre gli indirizzi IP privati in un solo IP pubblico.", teacher:"NAT significa Network Address Translation. È una funzione del router che modifica gli IP per permettere a più dispositivi privati di usare un unico indirizzo pubblico.", path:"Meccanismi speciali → NAT"},
+  dns:{title:"DNS", student:"Il DNS traduce un nome, come www.google.com, nel suo indirizzo IP.", teacher:"Il Domain Name System converte i nomi leggibili dagli utenti in indirizzi IP. È uno dei primi passaggi di quasi ogni connessione Internet.", path:"Meccanismi speciali → DNS"},
+  tls:{title:"HTTPS · TLS", student:"HTTPS = HTTP + TLS, quindi comunicazione protetta e cifrata durante il transito dei dati.", teacher:"TLS protegge i dati in transito. Nelle reti reali TCP/IP, la sicurezza del web è ottenuta tramite HTTP sopra TLS, cioè HTTPS.", path:"Meccanismi speciali → TLS"},
+  err:{title:"Errori tipici da evitare", student:"IP e MAC non sono la stessa cosa. Il router usa IP. Il frame cambia a ogni hop. Ethernet non corregge gli errori.", teacher:"Gli errori più comuni sono confondere IP e MAC, pensare che il router instradi con il MAC, credere che il frame resti uguale fino alla destinazione finale o che Ethernet corregga gli errori.", path:"Errori frequenti"}
+};
+
+const simData = {
+  incaps: [
+    {
+      title:"Dati applicativi",
+      nodes:[["Applicazione","c-teal",true],["Trasporto","c-green",false],["Internet","c-amber",false],["Accesso rete","c-coral",false],["Fisico","c-gray",false]],
+      log:"L’applicazione genera i dati da trasmettere, per esempio una richiesta HTTP.",
+      extra:[["Unità dati","Messaggio"],["Esempio","GET /index.html"]]
+    },
+    {
+      title:"Segmento TCP / datagramma UDP",
+      nodes:[["Applicazione","c-teal",false],["Trasporto","c-green",true],["Internet","c-amber",false],["Accesso rete","c-coral",false],["Fisico","c-gray",false]],
+      log:"Il livello Trasporto aggiunge le porte: crea un segmento TCP oppure un datagramma UDP. TCP offre anche affidabilità, ordine e ritrasmissione.",
+      extra:[["Unità dati","Segmento TCP / datagramma UDP"],["Aggiunge","Porta sorgente e porta destinazione"]]
+    },
+    {
+      title:"Pacchetto IP",
+      nodes:[["Applicazione","c-teal",false],["Trasporto","c-green",false],["Internet","c-amber",true],["Accesso rete","c-coral",false],["Fisico","c-gray",false]],
+      log:"Il livello Internet aggiunge gli indirizzi IP sorgente e destinazione e costruisce il pacchetto IP.",
+      extra:[["Unità dati","Pacchetto IP"],["Aggiunge","IP sorgente e IP destinazione"]]
+    },
+    {
+      title:"Frame",
+      nodes:[["Applicazione","c-teal",false],["Trasporto","c-green",false],["Internet","c-amber",false],["Accesso rete","c-coral",true],["Fisico","c-gray",false]],
+      log:"Su una LAN Ethernet, il livello Accesso rete incapsula il pacchetto IP in un frame con MAC sorgente, MAC destinazione e FCS.",
+      extra:[["Unità dati","Frame"],["Aggiunge","MAC sorgente, MAC destinazione, FCS"]]
+    },
+    {
+      title:"Bit",
+      nodes:[["Applicazione","c-teal",false],["Trasporto","c-green",false],["Internet","c-amber",false],["Accesso rete","c-coral",false],["Fisico","c-gray",true]],
+      log:"Le funzioni fisiche, comprese nell’Accesso rete del modello TCP/IP, trasmettono i bit sul mezzo. Il riquadro Fisico evidenzia queste funzioni: non aggiunge un quinto livello TCP/IP.",
+      extra:[["Unità dati","Bit"],["Mezzo","Cavo o collegamento wireless"]]
+    }
+  ],
+
+  routing: [
+    {
+      title:"PC A crea il pacchetto",
+      nodes:[["PC A","c-blue",true],["R1","c-amber",false],["R2","c-amber",false],["Server","c-teal",false]],
+      log:"PC A prepara un pacchetto IP con destinazione finale il server.",
+      extra:[["IP destinazione","142.250.180.78"],["Destinazione finale","Server remoto"]]
+    },
+    {
+      title:"Router R1",
+      nodes:[["PC A","c-blue",false],["R1","c-amber",true],["R2","c-amber",false],["Server","c-teal",false]],
+      log:"R1 legge l’IP di destinazione finale, consulta la propria tabella di instradamento e sceglie come next-hop il router R2.",
+      extra:[["Il router legge","IP finale del server"],["Il router inoltra verso","Router R2 (next-hop)"]]
+    },
+    {
+      title:"Router R2",
+      nodes:[["PC A","c-blue",false],["R1","c-amber",false],["R2","c-amber",true],["Server","c-teal",false]],
+      log:"R2 legge di nuovo l’IP di destinazione finale e inoltra il pacchetto verso la rete del server.",
+      extra:[["IP finale","142.250.180.78"],["Osservazione","Senza NAT gli indirizzi IP restano; TTL e checksum IPv4 cambiano"]]
+    },
+    {
+      title:"Arrivo al server",
+      nodes:[["PC A","c-blue",false],["R1","c-amber",false],["R2","c-amber",false],["Server","c-teal",true]],
+      log:"Il pacchetto arriva nella rete del server. Solo nell’ultimo tratto locale il frame usa il MAC del server destinatario.",
+      extra:[["IP","Destinazione finale"],["MAC del frame","Valido solo nell’ultimo tratto locale"]]
+    }
+  ],
+
+  dns: [
+    {
+      title:"Nome richiesto",
+      nodes:[["Utente","c-purple",true],["DNS","c-gold",false],["IP","c-blue",false],["Server","c-teal",false]],
+      log:"L’utente inserisce un nome di dominio, per esempio www.google.com.",
+      extra:[["Input","www.google.com"],["Problema","Il browser non può comunicare usando direttamente il nome"]]
+    },
+    {
+      title:"Richiesta al DNS",
+      nodes:[["Utente","c-purple",false],["DNS","c-gold",true],["IP","c-blue",false],["Server","c-teal",false]],
+      log:"Il resolver DNS riceve la richiesta e cerca l’indirizzo IP corrispondente al nome inserito.",
+      extra:[["Domanda","Qual è l’IP di www.google.com?"],["Protocollo","DNS"]]
+    },
+    {
+      title:"Risposta con IP",
+      nodes:[["Utente","c-purple",false],["DNS","c-gold",false],["IP","c-blue",true],["Server","c-teal",false]],
+      log:"Il DNS restituisce un indirizzo IP numerico che il client può usare per avviare la comunicazione.",
+      extra:[["Risposta","142.250.180.78"],["Risultato","Nome di dominio → indirizzo IP"]]
+    },
+    {
+      title:"Connessione al server",
+      nodes:[["Utente","c-purple",false],["DNS","c-gold",false],["IP","c-blue",false],["Server","c-teal",true]],
+      log:"Dopo la risoluzione DNS, il client può iniziare la vera comunicazione con il server.",
+      extra:[["Passo successivo","TCP / HTTPS"],["Nota","DNS risolve il nome, ma non trasporta il contenuto della pagina"]]
+    }
+  ],
+
+  arp: [
+    {
+      title:"Richiesta ARP in broadcast",
+      nodes:[["PC A","c-blue",true],["LAN","c-gray",false],["Gateway","c-amber",false],["PC B","c-teal",false]],
+      log:"PC A conosce l’indirizzo IP del gateway ma non il suo MAC. Per questo invia una richiesta ARP in broadcast nella LAN.",
+      extra:[["Domanda ARP","Chi ha 192.168.1.1?"],["Tipo di invio","Broadcast a tutta la rete locale"]]
+    },
+    {
+      title:"Tutti ricevono, uno solo risponde",
+      nodes:[["PC A","c-blue",false],["LAN","c-gray",true],["Gateway","c-amber",false],["PC B","c-teal",false]],
+      log:"Tutti i dispositivi della LAN ricevono la richiesta ARP, ma solo il dispositivo che possiede quell’IP deve rispondere.",
+      extra:[["Dispositivi coinvolti","Tutta la LAN"],["Risponde solo","Il nodo con IP 192.168.1.1"]]
+    },
+    {
+      title:"Risposta ARP del gateway",
+      nodes:[["PC A","c-blue",false],["LAN","c-gray",false],["Gateway","c-amber",true],["PC B","c-teal",false]],
+      log:"Il gateway invia una risposta ARP unicast a PC A comunicando il proprio indirizzo MAC.",
+      extra:[["Risposta","192.168.1.1 è al MAC AA-BB-CC-DD-EE-01"],["Tipo di invio","Unicast verso PC A"]]
+    },
+    {
+      title:"Tabella ARP aggiornata",
+      nodes:[["PC A","c-blue",true],["LAN","c-gray",false],["Gateway","c-amber",false],["PC B","c-teal",false]],
+      log:"PC A memorizza l’associazione IP → MAC nella propria tabella ARP. Questa tabella può essere visualizzata con il comando arp -a. Ora PC A può costruire il frame Ethernet verso il gateway.",
+      extra:[
+        ["Tabella ARP","192.168.1.1 → AA-BB-CC-DD-EE-01"],
+        ["Comando Windows","arp -a"],
+        ["Esempio output","192.168.1.1  aa-bb-cc-dd-ee-01  dinamico"],
+        ["Risultato","PC A può inviare il primo frame"]
+      ]
+    }
+  ],
+
+  nextHop: [
+    {
+      title:"Destinazione finale e gateway",
+      nodes:[["PC A","c-blue",true],["Gateway","c-amber",false],["Router successivo","c-amber",false],["Server","c-teal",false]],
+      log:"PC A conosce l’IP finale del server, ma per uscire dalla LAN deve inviare il primo frame al gateway.",
+      extra:[["IP destinazione finale","142.250.180.78"],["MAC destinazione del primo frame","MAC del gateway, non del server"]]
+    },
+    {
+      title:"Primo frame locale",
+      nodes:[["PC A","c-blue",false],["Gateway","c-amber",true],["Router successivo","c-amber",false],["Server","c-teal",false]],
+      log:"Nel primo tratto locale, il frame usa come MAC destinazione il router gateway. Il pacchetto IP continua però a indicare il server come destinazione finale.",
+      extra:[["IP nel pacchetto","Server finale"],["MAC nel frame","Gateway (next-hop locale)"]]
+    },
+    {
+      title:"Il router ricrea il frame",
+      nodes:[["PC A","c-blue",false],["Gateway","c-amber",false],["Router successivo","c-amber",true],["Server","c-teal",false]],
+      log:"Il router rimuove il frame, legge l’IP destinazione, decrementa il TTL e aggiorna il checksum IPv4; crea poi un nuovo frame. Qui si assume un percorso con collegamenti Ethernet e senza NAT.",
+      extra:[["Cosa cambia","MAC sorgente e MAC destinazione del frame"],["Cosa non cambia","Indirizzi IP sorgente e destinazione (senza NAT)"]]
+    },
+    {
+      title:"Ultimo tratto verso il server",
+      nodes:[["PC A","c-blue",false],["Gateway","c-amber",false],["Router successivo","c-amber",false],["Server","c-teal",true]],
+      log:"Solo nell’ultimo tratto locale il MAC di destinazione del frame coincide con il MAC del server finale.",
+      extra:[["IP","Sempre 142.250.180.78"],["MAC finale","Coincide con il server solo nell’ultima LAN"]]
+    }
+  ]
+};
+
+const detail = document.getElementById('detail');
+const nodeButtons = Array.from(document.querySelectorAll('.node-btn[data-panel]'));
+const openFirstBtn = document.getElementById('openFirstBtn');
+const closeDetailBtn = document.getElementById('closeDetailBtn');
+const copySummaryBtn = document.getElementById('copySummaryBtn');
+const modeBtn = document.getElementById('modeBtn');
+const printBtn = document.getElementById('printBtn');
+let current = null;
+let teacherMode = false;
+
+const simTitle = document.getElementById('simTitle');
+const simStage = document.getElementById('simStage');
+const simLog = document.getElementById('simLog');
+const simExtra = document.getElementById('simExtra');
+const simPrevBtn = document.getElementById('simPrevBtn');
+const simNextBtn = document.getElementById('simNextBtn');
+const simResetBtn = document.getElementById('simResetBtn');
+const simArpBtn = document.getElementById('simArpBtn');
+const simIpconfigBtn = document.getElementById('simIpconfigBtn');
+const simPingBtn = document.getElementById('simPingBtn');
+const arpTerminal = document.getElementById('arpTerminal');
+const arpTerminalBody = document.getElementById('arpTerminalBody');
+const terminalTitle = document.getElementById('terminalTitle');
+const simButtons = Array.from(document.querySelectorAll('[data-sim]'));
+let currentSim = 'incaps';
+let currentSimStep = 0;
+
+function getPanelData(id){ return panels[id] || null; }
+function setActiveButton(activeBtn){
+  nodeButtons.forEach(btn => {
+    const isActive = btn === activeBtn;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-expanded', String(isActive));
+  });
+}
+function clearHighlights(){
+  nodeButtons.forEach(btn => { btn.classList.remove('highlight'); btn.classList.remove('dimmed'); });
+}
+function highlightGroup(group){
+  if(!group){ clearHighlights(); return; }
+  nodeButtons.forEach(btn => {
+    if(btn.dataset.group === group){ btn.classList.add('highlight'); btn.classList.remove('dimmed'); }
+    else{ btn.classList.remove('highlight'); btn.classList.add('dimmed'); }
+  });
+}
+function renderDetail(id, btn, doScroll = true){
+  const data = getPanelData(id);
+  if(!data || !btn) return;
+  const body = teacherMode ? data.teacher : data.student;
+  const extra = teacherMode ? '<div class="mini-path"><strong>Percorso concettuale:</strong> ' + data.path + '</div>' : '';
+  detail.innerHTML = '<p class="panel-title">' + data.title + '</p><div class="panel-body">' + body + '</div>' + extra;
+  detail.classList.add('visible');
+  detail.setAttribute('aria-hidden', 'false');
+  setActiveButton(btn);
+  highlightGroup(btn.dataset.group);
+  current = id;
+  safeStorage.setItem('tcpip_map_last_panel_sim4', id);
+  safeStorage.setItem('tcpip_map_teacher_mode_sim4', teacherMode ? '1' : '0');
+  if(doScroll){ detail.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+}
+function closeDetail(focusBtn = null){
+  detail.classList.remove('visible');
+  detail.setAttribute('aria-hidden', 'true');
+  detail.innerHTML = '';
+  nodeButtons.forEach(btn => { btn.classList.remove('active'); btn.setAttribute('aria-expanded', 'false'); });
+  clearHighlights();
+  current = null;
+  safeStorage.removeItem('tcpip_map_last_panel_sim4');
+  if(focusBtn) focusBtn.focus();
+}
+function togglePanel(id, btn){ if(current === id){ closeDetail(btn); return; } renderDetail(id, btn); }
+function buildPlainSummary(id){
+  const data = getPanelData(id);
+  if(!data) return '';
+  const text = teacherMode ? data.teacher : data.student;
+  let result = data.title + '\n\n' + text;
+  if(teacherMode) result += '\n\nPercorso concettuale: ' + data.path;
+  return result;
+}
+async function copyCurrentSummary(){
+  if(!current) return;
+  try{
+    await navigator.clipboard.writeText(buildPlainSummary(current));
+    const old = copySummaryBtn.textContent;
+    copySummaryBtn.textContent = 'Sintesi copiata';
+    setTimeout(() => { copySummaryBtn.textContent = old; }, 1400);
+  }catch(err){ console.error('Copia non riuscita:', err); }
+}
+function setMode(newMode){
+  teacherMode = newMode;
+  modeBtn.textContent = teacherMode ? 'Modalità studente' : 'Modalità docente';
+  modeBtn.classList.toggle('active-mode', teacherMode);
+  safeStorage.setItem('tcpip_map_teacher_mode_sim4', teacherMode ? '1' : '0');
+  if(current){
+    const activeBtn = nodeButtons.find(b => b.dataset.panel === current);
+    if(activeBtn) renderDetail(current, activeBtn, false);
+  }
+}
+function restoreState(){
+  teacherMode = safeStorage.getItem('tcpip_map_teacher_mode_sim4') === '1';
+  setMode(teacherMode);
+  const saved = safeStorage.getItem('tcpip_map_last_panel_sim4');
+  if(saved){
+    const btn = nodeButtons.find(b => b.dataset.panel === saved);
+    if(btn && panels[saved]) renderDetail(saved, btn, false);
+  }
+  const savedSim = safeStorage.getItem('tcpip_map_current_sim4');
+  if(savedSim && simData[savedSim]) currentSim = savedSim;
+  renderSimulation();
+}
+function openFirstPanel(){ const firstBtn = nodeButtons[0]; if(firstBtn) togglePanel(firstBtn.dataset.panel, firstBtn); }
+function openPrintableSummary(){
+  const lines = [];
+  Object.keys(panels).forEach(key => {
+    const p = panels[key];
+    lines.push('<h2>' + p.title + '</h2>');
+    lines.push('<p>' + (teacherMode ? p.teacher : p.student) + '</p>');
+    if(teacherMode) {
+      lines.push('<p><strong>Percorso concettuale:</strong> ' + p.path + '</p>');
+    }
+  });
+
+  const w = window.open('', '_blank');
+  if(!w) return;
+
+  w.document.write('<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Sintesi stampabile TCP/IP</title><style>body{font-family:Arial,Helvetica,sans-serif;line-height:1.7;margin:32px;color:#111}h1{font-size:28px}h2{margin-top:28px;font-size:22px}p{font-size:16px}</style></head><body><h1>Sintesi stampabile – Mappa concettuale TCP/IP</h1>' + lines.join('') + '</body></html>');
+  w.document.close();
+}
+
+
+function h(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
+function span(cls,txt){return h('span',cls,txt);}
+function termLine(...parts){const d=h('div');parts.forEach(p=>d.appendChild(typeof p==='string'?document.createTextNode(p):p));return d;}
+function termBlank(){return h('div',null,'\u00a0');}
+
+function renderArp(container, extra){
+  const rows=[
+    ['192.168.1.1',  'aa-bb-cc-dd-ee-01','dinamico'],
+    ['192.168.1.2',  'aa-bb-cc-dd-ee-02','dinamico'],
+    ['192.168.1.255','ff-ff-ff-ff-ff-ff', 'statico'],
+    ['224.0.0.22',   '01-00-5e-00-00-16','statico'],
+    ['224.0.0.251',  '01-00-5e-00-00-fb','statico'],
+    ['255.255.255.255','ff-ff-ff-ff-ff-ff','statico']
+  ];
+  container.appendChild(termLine(span('t-head','Interfaccia: '),span('t-val','192.168.1.10'),span('t-dim',' --- 0x6')));
+  container.appendChild(termLine(span('t-dim','  Indirizzo Internet      Indirizzo fisico        Tipo')));
+  rows.forEach(r=>{
+    container.appendChild(termLine(
+      span('t-dim','  '),
+      span('t-key', r[0].padEnd(25)),
+      span('t-val', r[1].padEnd(24)),
+      span(r[2]==='dinamico'?'t-ok':'t-dim', r[2])
+    ));
+  });
+  if(extra){container.appendChild(termBlank());extra.forEach(l=>container.appendChild(termLine(span('t-warn',l))));}
+}
+
+function renderIpconfig(container){
+  const block=(title,rows)=>{
+    container.appendChild(termBlank());
+    container.appendChild(termLine(span('t-head', title)));
+    rows.forEach(([key,val])=>{
+      const dots = '. '.repeat(Math.max(1, Math.floor((45-key.length)/2)));
+      container.appendChild(termLine(
+        span('t-dim','   '),
+        span('t-key', key),
+        span('t-dot', ' . . . . . . . . . . . . . . . . . . . '.slice(0, Math.max(4, 44-key.length))),
+        span('t-sep',' : '),
+        span('t-val', val)
+      ));
+    });
+  };
+  container.appendChild(termLine(span('t-head','Configurazione IP di Windows')));
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-dim','   Nome host. . . . . . . . . . . . . . . . . . : '),span('t-val','PC-STUDENTE-01')));
+  container.appendChild(termLine(span('t-dim','   Suffisso DNS primario. . . . . . . . . . . . : '),span('t-val','itis.local')));
+  container.appendChild(termLine(span('t-dim','   Tipo di nodo. . . . . . . . . . . . . . . . . : '),span('t-val','Ibrido')));
+  container.appendChild(termLine(span('t-dim','   Routing IP attivato. . . . . . . . . . . . . : '),span('t-val','No')));
+  container.appendChild(termLine(span('t-dim','   Proxy WINS attivato. . . . . . . . . . . . . : '),span('t-val','No')));
+  container.appendChild(termLine(span('t-dim','   Elenco ricerca suffissi DNS. . . . . . . . . : '),span('t-val','itis.local')));
+
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-head','Scheda Ethernet Ethernet:')));
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-dim','   Suffisso DNS specifico per connessione. . . : '),span('t-val','itis.local')));
+  container.appendChild(termLine(span('t-dim','   Descrizione. . . . . . . . . . . . . . . . . : '),span('t-val','Intel(R) Ethernet Connection I219-V')));
+  container.appendChild(termLine(span('t-dim','   Indirizzo fisico. . . . . . . . . . . . . . . : '),span('t-val','A4-C3-F0-1B-2E-7D')));
+  container.appendChild(termLine(span('t-dim','   DHCP abilitato. . . . . . . . . . . . . . . . : '),span('t-ok','Sì')));
+  container.appendChild(termLine(span('t-dim','   Configurazione automatica abilitata. . . . . : '),span('t-ok','Sì')));
+  container.appendChild(termLine(span('t-dim','   Indirizzo IPv6 locale rispetto al collegamento: '),span('t-val','fe80::b4e2:9a1f:3c7d:a2b1%6')));
+  container.appendChild(termLine(span('t-dim','   Indirizzo IPv4. . . . . . . . . . . . . . . . : '),span('t-val','192.168.1.10(Preferito)')));
+  container.appendChild(termLine(span('t-dim','   Subnet mask. . . . . . . . . . . . . . . . . : '),span('t-val','255.255.255.0')));
+  container.appendChild(termLine(span('t-dim','   Lease ottenuto. . . . . . . . . . . . . . . . : '),span('t-val','lunedì 14 aprile 2025 08:32:11')));
+  container.appendChild(termLine(span('t-dim','   Scadenza lease. . . . . . . . . . . . . . . . : '),span('t-val','martedì 15 aprile 2025 08:32:11')));
+  container.appendChild(termLine(span('t-dim','   Gateway predefinito. . . . . . . . . . . . . : '),span('t-val','192.168.1.1')));
+  container.appendChild(termLine(span('t-dim','   Server DHCP. . . . . . . . . . . . . . . . . : '),span('t-val','192.168.1.1')));
+  container.appendChild(termLine(span('t-dim','   IAID DHCPv6. . . . . . . . . . . . . . . . . : '),span('t-val','101130519')));
+  container.appendChild(termLine(span('t-dim','   DUID client DHCPv6. . . . . . . . . . . . . . : '),span('t-val','00-01-00-01-2C-3A-1F-4B-A4-C3-F0-1B-2E-7D')));
+  container.appendChild(termLine(span('t-dim','   Server DNS. . . . . . . . . . . . . . . . . . : '),span('t-val','8.8.8.8')));
+  container.appendChild(termLine(span('t-dim','                                                   '),span('t-val','8.8.4.4')));
+  container.appendChild(termLine(span('t-dim','   NetBIOS su TCP/IP. . . . . . . . . . . . . . : '),span('t-val','Attivato')));
+
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-head','Scheda Wireless LAN Wi-Fi:')));
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-dim','   Stato supporto. . . . . . . . . . . . . . . . : '),span('t-dim','Supporto disconnesso')));
+
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-head','Scheda Ethernet Connessione rete Bluetooth:')));
+  container.appendChild(termBlank());
+  container.appendChild(termLine(span('t-dim','   Stato supporto. . . . . . . . . . . . . . . . : '),span('t-dim','Supporto disconnesso')));
+}
+
+function renderPing(container, target){
+  const ip = target || '142.250.180.78';
+  const host = ip === '142.250.180.78' ? 'mia-lts.google.com' : ip;
+  const ttls = [116,116,116,115];
+  const times = [45,52,48,50];
+  container.appendChild(termLine(span('t-dim',`Esecuzione di Ping ${host} [${ip}] con 32 byte di dati:`)));
+  container.appendChild(termBlank());
+  let pingTimer = null;
+  let i = 0;
+  const cursor = h('span','cursor');
+  const waiting = termLine(cursor);
+  container.appendChild(waiting);
+  pingTimer = setInterval(()=>{
+    if(i < 4){
+      const d = termLine(
+        span('t-ok','Risposta da '),span('t-val',ip),span('t-ok',': '),
+        span('t-dim','byte='),span('t-val','32'),span('t-dim',' durata='),
+        span('t-val',times[i]+'ms'),span('t-dim',' TTL='),span('t-val',''+ttls[i])
+      );
+      container.insertBefore(d, waiting);
+      i++;
+    } else {
+      clearInterval(pingTimer);
+      container.removeChild(waiting);
+      container.appendChild(termBlank());
+      container.appendChild(termLine(span('t-dim',`Statistiche Ping per ${ip}:`)));
+      container.appendChild(termLine(
+        span('t-dim','    Pacchetti: '),
+        span('t-key','Trasmessi'),span('t-dim',' = '),span('t-val','4'),span('t-dim',', '),
+        span('t-key','Ricevuti'),span('t-dim',' = '),span('t-ok','4'),span('t-dim',', '),
+        span('t-key','Persi'),span('t-dim',' = '),span('t-ok','0'),span('t-dim',' ('),span('t-ok','0%'),span('t-dim',' persi),')
+      ));
+      container.appendChild(termBlank());
+      container.appendChild(termLine(span('t-dim','Statistiche di round trip approssimative in millisecondi:')));
+      container.appendChild(termLine(
+        span('t-dim','    Minimo = '),span('t-val','45ms'),
+        span('t-dim',', Massimo = '),span('t-val','52ms'),
+        span('t-dim',', Medio = '),span('t-val','49ms')
+      ));
+      container.appendChild(termBlank());
+      const cur2=h('span','cursor'); container.appendChild(termLine(span('t-prompt','C:\\>'),cur2));
+    }
+  }, 700);
+}
+
+function clearPingTimers(){
+  const body = document.getElementById('arpTerminalBody');
+  if(body) body.innerHTML='';
+}
+
+function hideTerminal(){
+  arpTerminal.classList.remove('visible');
+  clearPingTimers();
+}
+
+function showTerminal(type){
+  clearPingTimers();
+  const body = document.getElementById('arpTerminalBody');
+  body.innerHTML = '';
+  arpTerminal.classList.add('visible');
+
+  const cmdLine = (prompt, cmd) => {
+    body.appendChild(termLine(span('t-prompt', prompt), span('t-cmd', cmd)));
+  };
+
+  if(type === 'arp'){
+    terminalTitle.textContent = 'Prompt dei comandi';
+    cmdLine('C:\\>', 'arp -a');
+    body.appendChild(termBlank());
+    if(currentSim === 'arp'){
+      renderArp(body, ['Nota: la tabella ARP è stata popolata dopo la simulazione ARP.','Il MAC del gateway è ora disponibile per costruire il frame.']);
+    } else if(currentSim === 'nextHop'){
+      renderArp(body, ['Nota: il primo frame usa il MAC del gateway (192.168.1.1) come destinazione.','L\'IP destinazione del pacchetto rimane sempre 142.250.180.78.']);
+    } else {
+      renderArp(body, null);
+    }
+    body.appendChild(termBlank());
+    body.appendChild(termLine(span('t-prompt','C:\\>'),h('span','cursor')));
+  }
+
+  else if(type === 'ipconfig'){
+    terminalTitle.textContent = 'Prompt dei comandi';
+    cmdLine('C:\\>', 'ipconfig /all');
+    body.appendChild(termBlank());
+    renderIpconfig(body);
+    body.appendChild(termBlank());
+    body.appendChild(termLine(span('t-prompt','C:\\>'),h('span','cursor')));
+  }
+
+  else if(type === 'ping'){
+    terminalTitle.textContent = 'Prompt dei comandi';
+    const target = currentSim === 'routing' || currentSim === 'nextHop' ? '142.250.180.78' : '192.168.1.1';
+    cmdLine('C:\\>', 'ping ' + target);
+    body.appendChild(termBlank());
+    renderPing(body, target);
+  }
+
+  arpTerminal.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderSimulation(){
+  hideTerminal();
+  const steps = simData[currentSim];
+  const step = steps[currentSimStep];
+  simTitle.textContent = 'SIMULAZIONE: ' + step.title.toUpperCase();
+  simStage.innerHTML = '';
+  step.nodes.forEach((n, idx) => {
+    const div = document.createElement('div');
+    div.className = 'sim-node ' + n[1] + (n[2] ? ' active' : '');
+    div.textContent = n[0];
+    simStage.appendChild(div);
+    if(idx < step.nodes.length - 1){
+      const arr = document.createElement('div');
+      arr.className = 'arrow';
+      arr.textContent = '→';
+      simStage.appendChild(arr);
+    }
+  });
+  simLog.innerHTML = '<p style="margin:0">' + step.log + '</p>';
+  simExtra.innerHTML = '';
+  step.extra.forEach(pair => {
+    const card = document.createElement('div');
+    card.className = 'sim-card';
+    card.innerHTML = '<strong>' + pair[0] + ':</strong><br>' + pair[1];
+    simExtra.appendChild(card);
+  });
+  simButtons.forEach(btn => btn.classList.toggle('active-mode', btn.dataset.sim === currentSim));
+  safeStorage.setItem('tcpip_map_current_sim4', currentSim);
+}
+function changeSim(newSim){ currentSim = newSim; currentSimStep = 0; renderSimulation(); }
+function simNext(){ const steps = simData[currentSim]; if(currentSimStep < steps.length - 1) currentSimStep++; renderSimulation(); }
+function simPrev(){ if(currentSimStep > 0) currentSimStep--; renderSimulation(); }
+function simReset(){ currentSimStep = 0; renderSimulation(); }
+
+nodeButtons.forEach((btn, index) => {
+  btn.setAttribute('type', 'button');
+  btn.setAttribute('aria-controls', 'detail');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.addEventListener('click', () => togglePanel(btn.dataset.panel, btn));
+  btn.addEventListener('keydown', (e) => {
+    let targetIndex = null;
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown') targetIndex = (index + 1) % nodeButtons.length;
+    else if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') targetIndex = (index - 1 + nodeButtons.length) % nodeButtons.length;
+    else if(e.key === 'Home') targetIndex = 0;
+    else if(e.key === 'End') targetIndex = nodeButtons.length - 1;
+    else if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); togglePanel(btn.dataset.panel, btn); return; }
+    else if(e.key === 'Escape'){ closeDetail(btn); return; }
+    if(targetIndex !== null){ e.preventDefault(); nodeButtons[targetIndex].focus(); }
+  });
+});
+
+openFirstBtn.addEventListener('click', openFirstPanel);
+closeDetailBtn.addEventListener('click', () => {
+  const activeBtn = nodeButtons.find(b => b.classList.contains('active')) || null;
+  closeDetail(activeBtn);
+});
+copySummaryBtn.addEventListener('click', copyCurrentSummary);
+modeBtn.addEventListener('click', () => setMode(!teacherMode));
+printBtn.addEventListener('click', openPrintableSummary);
+simButtons.forEach(btn => btn.addEventListener('click', () => changeSim(btn.dataset.sim)));
+simNextBtn.addEventListener('click', simNext);
+simPrevBtn.addEventListener('click', simPrev);
+simResetBtn.addEventListener('click', simReset);
+simArpBtn.addEventListener('click', () => showTerminal('arp'));
+simIpconfigBtn.addEventListener('click', () => showTerminal('ipconfig'));
+simPingBtn.addEventListener('click', () => showTerminal('ping'));
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && current){
+    const activeBtn = nodeButtons.find(b => b.classList.contains('active')) || null;
+    closeDetail(activeBtn);
+  }
+});
+
+restoreState();
+
+// ─── ZOOM (dimensione intera pagina) ────────────────────
+const ZOOM_KEY='netlab_zoom_mult';
+let zoomMult = parseFloat(safeStorage.getItem(ZOOM_KEY)) || 1;
+function applyZoom(){
+  zoomMult = Math.max(0.8, Math.min(1.5, zoomMult));
+  document.documentElement.style.setProperty('--zoom', zoomMult);
+  try{ safeStorage.setItem(ZOOM_KEY, zoomMult); }catch(e){}
+}
+applyZoom();
+document.getElementById('zoom-in').addEventListener('click', ()=>{ zoomMult+=0.08; applyZoom(); });
+document.getElementById('zoom-out').addEventListener('click', ()=>{ zoomMult-=0.08; applyZoom(); });
+document.getElementById('zoom-reset').addEventListener('click', ()=>{ zoomMult=1; applyZoom(); });
+
+// ─── TOGGLE VISTA TCP/IP ⇄ ISO/OSI ─────────────────────
+const osiToggleBtn = document.getElementById('osiToggleBtn');
+const livelliLabel = document.getElementById('livelli-row-label');
+let showingOsi = false;
+osiToggleBtn.addEventListener('click', () => {
+  showingOsi = !showingOsi;
+  document.querySelectorAll('.model-tcpip').forEach(el => el.style.display = showingOsi ? 'none' : '');
+  document.querySelectorAll('.model-osi').forEach(el => el.style.display = showingOsi ? 'flex' : 'none');
+  livelliLabel.textContent = showingOsi ? 'I 7 LIVELLI (ISO/OSI)' : 'I 4 LIVELLI (TCP/IP)';
+  osiToggleBtn.textContent = showingOsi ? '🔄 Vista: ISO/OSI (7 livelli)' : '🔄 Vista: TCP/IP (4 livelli)';
+});
+
+// ─── BACK TO TOP ────────────────────────────────────────
+const topBtn = document.getElementById('top-btn');
+window.addEventListener('scroll', () => {
+  topBtn.classList.toggle('show', window.scrollY > 320);
+});
+topBtn.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
+</script>
+<footer>
+<div style="text-align:center; margin-top:30px; font-size:14px; color:#6b7280;">
+  © 2026 Domenico Capano – LearningObjects.org · Parte del progetto <a href="netlab_v5_6.html" style="color:#0046a8">NetLab Simulator v5.6</a>. Distribuito con licenza CC BY 4.0.
+</div>
+</footer>
+</body>
+</html>

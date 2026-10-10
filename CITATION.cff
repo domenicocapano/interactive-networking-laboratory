@@ -1,29 +1,23 @@
 cff-version: 1.2.0
-message: >-
-  If you use this software, please cite it as below. Before publication,
-  add the DOI assigned by Zenodo to Version 1.1 (do not reuse the DOI of
-  Version 1.0, 10.5281/zenodo.19066947, which identifies a different
-  publication) and set the actual date-released.
+message: "If you use this software, please cite it as below."
 title: "Interactive Networking Laboratory – Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing"
 type: software
 authors:
   - family-names: "Capano"
     given-names: "Domenico"
-version: "1.1"
-# NOTA per l'autore: i campi "doi", "url" e "date-released" sono stati
-# rimossi perché non ancora noti per la Version 1.1 (il DOI della
-# Version 1.0, 10.5281/zenodo.19066947, NON va riutilizzato qui). Prima
-# della pubblicazione definitiva, aggiungere:
-#   doi: "10.5281/zenodo.21299699"
-#   url: "https://doi.org/10.5281/zenodo.21299699"
-#   date-released: "2026-07-10"  (data reale di pubblicazione)
+version: "1.2"
+# Published on Zenodo on 10 October 2026.
+date-released: "2026-10-10"
+repository-code: "https://github.com/domenicocapano/interactive-networking-laboratory"
+doi: "10.5281/zenodo.23272307"
+url: "https://doi.org/10.5281/zenodo.23272307"
 license: "CC-BY-4.0"
 abstract: >-
   Interactive Networking Laboratory is a package of interactive,
   dependency-free HTML/JS educational resources for teaching computer
   networking: the ISO/OSI model, TCP/IP architecture, encapsulation, ARP,
   DNS, HTTP, TCP handshake, ICMP/Traceroute, IP fragmentation, and packet
-  routing. It includes the main simulator NetLab (internal version 5.5),
+  routing. It includes the main simulator NetLab (internal version 5.6),
   a glossary of terms and network commands, an interactive TCP/IP and
   ISO/OSI concept map with five embedded mini-simulations, and
   documentation for students and teachers. It runs entirely offline in

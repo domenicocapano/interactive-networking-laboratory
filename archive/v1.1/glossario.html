@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Domenico Capano">
+<meta name="license" content="CC-BY-4.0">
+<meta name="description" content="Glossario e comandi di rete, componente del pacchetto Interactive Networking Laboratory (NetLab v5.5).">
+<meta name="citation_title" content="Interactive Networking Laboratory - Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing">
+<meta name="citation_author" content="Capano, Domenico">
+<meta name="citation_publication_date" content="2026">
+<meta name="citation_doi" content="10.5281/zenodo.21299699">
+<title>Glossario & Comandi — NetLab ISO/OSI & TCP/IP Simulator</title>
+<style>
+:root{--zoom:1;}
+html{font-size:calc(18px * var(--zoom));}
+@media (min-width:1300px){html{font-size:calc(19.5px * var(--zoom));}}
+@media (max-width:760px){html{font-size:calc(16.5px * var(--zoom));}}
+@media (max-width:640px){html{font-size:calc(15.5px * var(--zoom));}}
+@media (max-width:400px){html{font-size:calc(14.5px * var(--zoom));}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e4eaf6;color:#1a2030;min-height:100vh;-webkit-text-size-adjust:100%;}
+.main-col{max-width:980px;margin:0 auto;padding:10px 14px 60px;}
+.hdr{background:linear-gradient(90deg,#0046a8,#0069d9);color:#fff;
+     border-radius:10px;padding:10px 16px;margin-bottom:9px;
+     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.hdr h1{font-size:1.05rem;font-weight:800;}
+.hdr p{font-size:.68rem;opacity:.82;}
+.credit{font-size:.66rem!important;opacity:.8;margin-top:2px;}
+.credit a{color:#ffe082;text-decoration:none;font-weight:700;}
+.credit a:hover{text-decoration:underline;}
+.hdr-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.zoom-ctrl{display:flex;gap:2px;background:rgba(255,255,255,.14);border-radius:6px;padding:2px;}
+.zoom-ctrl button{background:transparent;color:#fff;border:none;padding:4px 9px;
+  font-size:.72rem;font-weight:800;border-radius:4px;cursor:pointer;}
+.zoom-ctrl button:hover{background:rgba(255,255,255,.22);}
+.version-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+               border-radius:5px;padding:2px 9px;font-size:.68rem;font-weight:700;}
+.site-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.site-nav-link{padding:6px 13px;border-radius:6px;background:#fff;border:1px solid #c8d8f0;
+  color:#0046a8;font-size:.74rem;font-weight:700;text-decoration:none;transition:all .18s;}
+.site-nav-link:hover{background:#e8f0ff;}
+.site-nav-link.active{background:#0046a8;color:#fff;border-color:#0046a8;}
+.board-intro{background:linear-gradient(90deg,#0046a8,#0069d9);color:#fff;
+  border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:.83rem;line-height:1.6;}
+.board-card{background:#fff;border:1px solid #d0daf0;border-radius:8px;
+  padding:12px 16px;margin-bottom:12px;}
+.board-card h3{color:#0046a8;font-size:.92rem;margin-bottom:6px;}
+#gloss-search{width:100%;padding:9px 12px;border:1px solid #b0c4e0;border-radius:6px;font-size:.85rem;}
+footer{text-align:center;font-size:.68rem;color:#556;padding:20px 10px;}
+footer a{color:#0046a8;}
+#top-btn{position:fixed;bottom:16px;left:16px;z-index:500;
+  background:#0d1a2e;color:#74c0fc;border:2px solid #1e3a5f;border-radius:50%;
+  width:42px;height:42px;font-size:1.1rem;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);transition:all .2s;
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  display:flex;align-items:center;justify-content:center;}
+#top-btn.show{opacity:1;pointer-events:auto;transform:none;}
+#top-btn:hover{background:#1a3a6e;color:#a8d8ff;transform:translateY(-2px);}
+</style>
+</head>
+<body>
+<div class="main-col">
+
+<div class="hdr">
+  <div>
+    <h1>📖 NetLab — Glossario &amp; Comandi</h1>
+    <p>Tutti i termini tecnici del simulatore e i comandi di rete da eseguire dal prompt</p>
+    <p class="credit">📚 Una risorsa di <a href="https://www.learningobjects.org" target="_blank" rel="noopener">LearningObjects.org</a></p>
+  </div>
+  <div class="hdr-tools">
+    <div class="zoom-ctrl" title="Dimensione testi">
+      <button id="zoom-out" type="button">A−</button>
+      <button id="zoom-reset" type="button">A</button>
+      <button id="zoom-in" type="button">A+</button>
+    </div>
+    <span class="version-badge">v5.5</span>
+  </div>
+</div>
+
+<div class="site-nav">
+  <a href="netlab_v5_5.html" class="site-nav-link">📡 Simulatore</a>
+  <span class="site-nav-link active">📖 Glossario &amp; Comandi</span>
+  <a href="mappa_tcpip_v5_5.html" class="site-nav-link">🗺️ Mappa Concettuale</a>
+</div>
+
+<div class="board-intro">📖 Glossario di tutti i termini tecnici usati nel simulatore NetLab e lista dei comandi di rete più comuni da eseguire dal prompt/terminale del PC, con spiegazione di cosa restituiscono.</div>
+
+<div class="board-card">
+  <label for="gloss-search" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;">Cerca un termine o un comando</label>
+  <input type="text" id="gloss-search" placeholder="🔍 Cerca un termine o un comando (es. ARP, TTL, ipconfig...)">
+</div>
+
+<div class="board-card">
+  <h3>📖 Glossario dei termini</h3>
+  <div id="gloss-list"></div>
+</div>
+
+<div class="board-card">
+  <h3>💻 Comandi di rete da prompt/terminale</h3>
+  <p style="font-size:.79rem;color:#555;margin-bottom:8px">Comandi utili per esplorare dal vivo, sul proprio PC, i concetti visti nel simulatore. Sintassi Windows/Linux-Mac dove differiscono.</p>
+  <div id="cmd-list"></div>
+</div>
+
+</div><!-- /main-col -->
+
+<footer>
+  <p>&copy; 2026 Domenico Capano – LearningObjects.org · Parte del progetto <a href="netlab_v5_5.html">NetLab Simulator</a>. Distribuito con licenza CC BY 4.0.</p>
+</footer>
+
+<button id="top-btn" title="Torna in cima">⬆</button>
+
+<script>
+const $=id=>document.getElementById(id);
+
+// ─── ZOOM ───────────────────────────────────────────────
+const ZOOM_KEY='netlab_zoom_mult';
+let zoomMult=parseFloat(localStorage.getItem(ZOOM_KEY))||1;
+function applyZoom(){
+  zoomMult=Math.max(0.8,Math.min(1.5,zoomMult));
+  document.documentElement.style.setProperty('--zoom',zoomMult);
+  try{localStorage.setItem(ZOOM_KEY,zoomMult);}catch(e){}
+}
+applyZoom();
+$('zoom-in').addEventListener('click',()=>{zoomMult+=0.08;applyZoom();});
+$('zoom-out').addEventListener('click',()=>{zoomMult-=0.08;applyZoom();});
+$('zoom-reset').addEventListener('click',()=>{zoomMult=1;applyZoom();});
+
+// ─── GLOSSARIO & COMANDI ────────────────────────────────
+const GLOSSARY=[
+ {t:'OSI (modello ISO/OSI)',d:'Modello teorico a 7 livelli che descrive come i dati viaggiano in rete, dall\'applicazione fino al mezzo fisico.'},
+ {t:'TCP/IP',d:'Modello pratico a 4 livelli (Applicazione, Trasporto, Internet, Accesso) su cui si basa realmente Internet.'},
+ {t:'PDU (Protocol Data Unit)',d:'Nome che assume il dato a ogni livello: Dati/Segmento/Pacchetto/Frame/Bit, a seconda del livello attraversato.'},
+ {t:'Incapsulamento',d:'Processo per cui ogni livello aggiunge la propria intestazione (header) al dato ricevuto dal livello superiore, scendendo verso il livello fisico.'},
+ {t:'Decapsulamento',d:'Processo inverso: ogni livello del destinatario rimuove la propria intestazione, risalendo verso l\'applicazione.'},
+ {t:'Indirizzo MAC',d:'Identificativo fisico a 48 bit, univoco per ogni scheda di rete, usato al Livello 2 per la consegna locale sulla LAN.'},
+ {t:'Indirizzo IP',d:'Identificativo logico assegnato a un dispositivo per essere raggiungibile in rete, usato al Livello 3 per l\'instradamento.'},
+ {t:'Subnet mask',d:'Valore che indica quale parte di un indirizzo IP identifica la rete e quale l\'host, definendo i confini della LAN.'},
+ {t:'Gateway (default gateway)',d:'Router a cui un host invia il traffico destinato a reti diverse dalla propria; nel simulatore è Router-A.'},
+ {t:'ARP (Address Resolution Protocol)',d:'Protocollo del livello Accesso Rete (L2) che mette in relazione un indirizzo IPv4 con un indirizzo MAC. Opera nella rete locale mediante frame di livello Data Link; le sue richieste broadcast non vengono instradate dai router. Per il suo ruolo di collegamento tra indirizzamento IP e MAC viene talvolta descritto come protocollo "di confine" tra livello 2 e livello 3.'},
+ {t:'ARP cache',d:'Tabella locale temporanea che memorizza le corrispondenze IP↔MAC già risolte, per evitare richieste ARP ripetute.'},
+ {t:'DNS (Domain Name System)',d:'Servizio che traduce un nome a dominio (es. www.example.com) nel corrispondente indirizzo IP.'},
+ {t:'TCP (Transmission Control Protocol)',d:'Protocollo di trasporto orientato alla connessione: garantisce consegna affidabile, ordinata e con controllo di errore (usa handshake e ACK).'},
+ {t:'UDP (User Datagram Protocol)',d:'Protocollo di trasporto senza connessione: veloce ma non garantisce consegna né ordine. Usato da DNS, streaming, VoIP.'},
+ {t:'Porta (Port)',d:'Numero che identifica un\'applicazione/servizio specifico su un host (es. 80=HTTP, 443=HTTPS, 53=DNS).'},
+ {t:'Socket',d:'Combinazione univoca di indirizzo IP + porta che identifica un endpoint di comunicazione.'},
+ {t:'Three-way handshake (SYN/SYN-ACK/ACK)',d:'Sequenza di 3 messaggi con cui TCP apre una connessione affidabile prima di scambiare dati.'},
+ {t:'ACK (Acknowledgement)',d:'Segmento TCP che conferma la corretta ricezione di dati.'},
+ {t:'ICMP (Internet Control Message Protocol)',d:'Protocollo di Livello 3 usato per messaggi di controllo e diagnostica (es. ping, errori di instradamento).'},
+ {t:'Echo Request / Echo Reply',d:'Coppia di messaggi ICMP scambiati durante un ping per verificare la raggiungibilità di un host.'},
+ {t:'TTL (Time To Live)',d:'Contatore nell\'header IP che si decrementa a ogni router attraversato; a 0 il pacchetto viene scartato (usato da traceroute).'},
+ {t:'Traceroute / Tracert',d:'Strumento diagnostico che mostra tutti i router (hop) attraversati da un pacchetto verso una destinazione, sfruttando il TTL.'},
+ {t:'MTU (Maximum Transmission Unit)',d:'Dimensione massima di un pacchetto che può attraversare un collegamento senza essere frammentato.'},
+ {t:'Frammentazione IP',d:'Suddivisione di un pacchetto troppo grande per la MTU in frammenti più piccoli, riassemblati solo dal destinatario finale.'},
+ {t:'FCS/CRC (Frame Check Sequence)',d:'Codice di controllo aggiunto in coda al frame Ethernet per rilevare errori di trasmissione a Livello 2.'},
+ {t:'Router',d:'Dispositivo che opera al Livello 3, instrada pacchetti tra reti diverse leggendo l\'indirizzo IP e decrementando il TTL.'},
+ {t:'Switch',d:'Dispositivo che opera al Livello 2, inoltra frame all\'interno della stessa LAN basandosi sull\'indirizzo MAC.'},
+ {t:'Hub',d:'Dispositivo di Livello 1 (ormai obsoleto) che ripete il segnale elettrico a tutte le porte senza alcuna intelligenza di indirizzamento.'},
+ {t:'DCE (Data Circuit-terminating Equipment)',d:'Apparato (es. modem, CSU/DSU) che adatta il segnale digitale del DTE al mezzo di trasmissione WAN; opera solo a Livello 1.'},
+ {t:'DTE (Data Terminal Equipment)',d:'Dispositivo terminale (es. PC, router) che genera o riceve i dati; si collega alla rete tramite un DCE.'},
+ {t:'LAN (Local Area Network)',d:'Rete locale che collega dispositivi in un\'area limitata (edificio, ufficio, scuola).'},
+ {t:'WAN (Wide Area Network)',d:'Rete geografica che collega LAN distanti tra loro, tipicamente tramite operatori di telecomunicazione.'},
+ {t:'Broadcast',d:'Trasmissione inviata a tutti i dispositivi di una rete/segmento contemporaneamente (es. richiesta ARP).'},
+ {t:'Unicast',d:'Trasmissione inviata da un mittente a un singolo destinatario specifico.'},
+ {t:'HTTP / HTTPS',d:'Protocolli di Livello Applicazione per il trasferimento di pagine web; HTTPS aggiunge cifratura tramite TLS.'},
+ {t:'TLS/SSL',d:'Protocolli di cifratura che proteggono la comunicazione (es. tra browser e server web) da intercettazioni.'},
+ {t:'RTT (Round-Trip Time)',d:'Tempo impiegato da un pacchetto per andare a destinazione e tornare indietro; misurato tipicamente col ping.'},
+ {t:'Frame',d:'PDU del Livello 2 (Collegamento), contiene indirizzi MAC sorgente/destinazione e FCS.'},
+ {t:'Segmento / Datagramma',d:'PDU del Livello 4 (Trasporto): "segmento" per TCP, "datagramma" per UDP.'},
+ {t:'Pacchetto',d:'PDU del Livello 3 (Rete), contiene gli indirizzi IP sorgente/destinazione.'},
+];
+
+const CMD_LIST=[
+ {c:'ipconfig /all',os:'Windows (equiv. Linux/Mac: ifconfig -a / ip a)',
+  d:'Mostra la configurazione IP completa di tutte le interfacce di rete: indirizzo IP, subnet mask, gateway, indirizzo MAC, server DNS, se il DHCP è attivo. È il primo comando da lanciare per "fotografare" lo stato della propria scheda di rete.'},
+ {c:'ping <indirizzo>',os:'Windows / Linux / Mac',
+  d:'Invia richieste ICMP Echo Request a un host e misura se risponde e in quanto tempo (RTT). Verifica la raggiungibilità di base — esattamente lo scenario "ICMP/Ping" del simulatore.'},
+ {c:'tracert <indirizzo>',os:'Windows (equiv. Linux/Mac: traceroute)',
+  d:'Mostra tutti i router attraversati (hop) dal pacchetto fino a destinazione, sfruttando il TTL — corrisponde allo scenario "Traceroute" del simulatore.'},
+ {c:'arp -a',os:'Windows / Linux / Mac',
+  d:'Mostra la tabella ARP locale, cioè le corrispondenze IP↔MAC già risolte e memorizzate in cache — corrisponde allo scenario "ARP" del simulatore.'},
+ {c:'nslookup <nome dominio>',os:'Windows / Linux / Mac (Linux/Mac anche: dig)',
+  d:'Interroga un server DNS per ottenere l\'indirizzo IP corrispondente a un nome a dominio — corrisponde allo scenario "DNS" del simulatore.'},
+ {c:'netstat -an',os:'Windows / Linux / Mac',
+  d:'Elenca tutte le connessioni di rete attive sul PC (indirizzo locale, remoto, porta, stato) e le porte in ascolto. Utile per vedere socket e porte "dal vivo".'},
+ {c:'ipconfig /flushdns',os:'Windows (equiv. Linux/Mac: comandi diversi per servizio)',
+  d:'Svuota la cache DNS locale, forzando una nuova interrogazione al server DNS alla successiva richiesta di un nome a dominio.'},
+ {c:'route print',os:'Windows (equiv. Linux/Mac: route -n / ip route)',
+  d:'Mostra la tabella di instradamento del PC: quali reti sono raggiungibili direttamente e quale gateway usare per le altre.'},
+ {c:'hostname',os:'Windows / Linux / Mac',
+  d:'Restituisce il nome assegnato al proprio computer nella rete.'},
+ {c:'getmac',os:'Windows (equiv. Linux/Mac: ifconfig / ip link, campo "ether")',
+  d:'Mostra gli indirizzi MAC di tutte le schede di rete installate sul PC.'},
+];
+
+function render(filter){
+  const f=(filter||'').toLowerCase().trim();
+  const gWrap=$('gloss-list'),cWrap=$('cmd-list');
+  const gFiltered=GLOSSARY.filter(g=>!f||g.t.toLowerCase().includes(f)||g.d.toLowerCase().includes(f));
+  const cFiltered=CMD_LIST.filter(c=>!f||c.c.toLowerCase().includes(f)||c.d.toLowerCase().includes(f));
+  gWrap.innerHTML=gFiltered.length?gFiltered.map(g=>
+    `<div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid #eef2f8">
+       <b style="color:#0046a8;font-size:.82rem">${g.t}</b>
+       <p style="font-size:.78rem;color:#444;line-height:1.5;margin-top:2px">${g.d}</p>
+     </div>`).join('') : '<p style="color:#888;font-size:.78rem">Nessun termine trovato.</p>';
+  cWrap.innerHTML=cFiltered.length?cFiltered.map(c=>
+    `<div style="margin-bottom:11px;padding-bottom:11px;border-bottom:1px solid #eef2f8">
+       <code style="background:#111827;color:#69db7c;padding:3px 8px;border-radius:5px;font-size:.8rem;font-weight:700;display:inline-block">${c.c}</code>
+       <span style="font-size:.65rem;color:#888;margin-left:7px">${c.os}</span>
+       <p style="font-size:.78rem;color:#444;line-height:1.5;margin-top:4px">${c.d}</p>
+     </div>`).join('') : '<p style="color:#888;font-size:.78rem">Nessun comando trovato.</p>';
+}
+$('gloss-search').addEventListener('input',e=>render(e.target.value));
+render('');
+
+// ─── BACK TO TOP ────────────────────────────────────────
+const topBtn=$('top-btn');
+window.addEventListener('scroll',()=>{
+  topBtn.classList.toggle('show',window.scrollY>320);
+});
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+</script>
+</body>
+</html>

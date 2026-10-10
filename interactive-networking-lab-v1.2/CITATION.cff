@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Interactive Networking Laboratory – Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing"
+type: software
+authors:
+  - family-names: "Capano"
+    given-names: "Domenico"
+version: "1.2"
+# DOI reserved in the author's new-version Zenodo draft.
+# Registered upon publication; add the actual date-released after publication.
+doi: "10.5281/zenodo.23272307"
+url: "https://doi.org/10.5281/zenodo.23272307"
+license: "CC-BY-4.0"
+abstract: >-
+  Interactive Networking Laboratory is a package of interactive,
+  dependency-free HTML/JS educational resources for teaching computer
+  networking: the ISO/OSI model, TCP/IP architecture, encapsulation, ARP,
+  DNS, HTTP, TCP handshake, ICMP/Traceroute, IP fragmentation, and packet
+  routing. It includes the main simulator NetLab (internal version 5.6),
+  a glossary of terms and network commands, an interactive TCP/IP and
+  ISO/OSI concept map with five embedded mini-simulations, and
+  documentation for students and teachers. It runs entirely offline in
+  the browser, with no installation and no required external
+  dependencies.
+keywords:
+  - ISO/OSI
+  - TCP/IP
+  - ARP
+  - DNS
+  - HTTP
+  - packet routing
+  - computer networking
+  - network simulator
+  - educational software
+  - e-learning
+  - Sistemi e Reti

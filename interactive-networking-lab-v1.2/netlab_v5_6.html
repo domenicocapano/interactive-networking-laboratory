@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Domenico Capano">
+<meta name="license" content="CC-BY-4.0">
+<meta name="version" content="5.6">
+<meta name="description" content="NetLab - simulatore didattico interattivo ISO/OSI e TCP/IP, componente principale del pacchetto Interactive Networking Laboratory.">
+<meta name="citation_title" content="Interactive Networking Laboratory – Educational Simulators for ISO/OSI, TCP/IP, ARP, DNS, HTTP and Packet Routing">
+<meta name="citation_author" content="Capano, Domenico">
+<meta name="citation_publication_date" content="2026">
+<title>NetLab v5.6 - ISO/OSI & TCP/IP Simulator</title>
+<style>
+:root {
+  --lh:3rem; --log-w:300px; --anim:.52s; --zoom:1;
+  --c-host:#e65100; --c-router:#2e7d32; --c-dce:#4527a0;
+  --c-icmp:#00838f; --c-arp:#6a1b9a; --c-frag:#b71c1c; --c-quiz:#1565c0;
+}
+/* Base font-size aumentata: tutte le unità "rem" della UI scalano di conseguenza.
+   v5.1 usava 16px (default browser) risultando troppo piccola: v5.2 parte da 18px. */
+html{font-size:calc(18px * var(--zoom));}
+/* Su schermi PC larghi la vista di default è leggermente più grande */
+@media (min-width:1300px){
+  html{font-size:calc(19.5px * var(--zoom));}
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+     background:#e4eaf6;color:#1a2030;min-height:100vh;transition:padding-right .35s ease;
+     -webkit-text-size-adjust:100%;}
+body.log-open{padding-right:var(--log-w);}
+.main-col{padding:10px 14px 80px;}
+
+/* - RESPONSIVE: tablet / finestre PC strette - */
+@media (max-width:760px){
+  html{font-size:calc(16.5px * var(--zoom));}
+  .sim-wrap{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch;}
+  .sim-wrap{grid-template-columns:repeat(5,minmax(130px,1fr));}
+  .ctrl-bar{gap:10px;}
+}
+/* - RESPONSIVE: smartphone - */
+@media (max-width:640px){
+  html{font-size:calc(15.5px * var(--zoom));}
+  body.log-open{padding-right:0;}
+  .main-col{padding:8px 8px 90px;}
+  .hdr{flex-direction:column;align-items:flex-start;gap:4px;}
+  .tab-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+  .tab-btn{flex-shrink:0;padding:7px 12px;}
+  .ctrl-bar{flex-direction:column;align-items:stretch;}
+  .cg{width:100%;}
+  .cg select{width:100%;}
+  .br{flex-wrap:wrap;}
+  .br button, .btn-pair{flex:1 1 auto;min-width:90px;}
+  button{padding:8px 11px;min-height:36px;}
+  .topo-leg{justify-content:center;}
+  .log-col{width:100%;}
+  .side-panel{width:88vw;}
+  .board-grid{grid-template-columns:1fr;}
+  .quiz-score-bar{flex-direction:column;gap:4px;}
+  .quiz-progress{width:100%;}
+}
+@media (max-width:400px){
+  html{font-size:calc(14.5px * var(--zoom));}
+}
+
+/* - TOAST NOTIFICA CONSEGNA - */
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-14px);
+  background:#0d1a2e;color:#69db7c;border:1px solid #28a745;border-radius:8px;
+  padding:9px 18px;font-size:.8rem;font-weight:700;z-index:900;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;pointer-events:none;
+  transition:opacity .3s ease, transform .3s ease;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* - BOTTONI INFO SCENARIO ── */
+.btn-pair{display:flex;flex-direction:column;gap:2px;}
+.btn-info{background:#eef3ff;color:#0046a8;border:1px solid #b8cdf2!important;
+  font-size:.6rem!important;font-weight:700;padding:2px 4px!important;
+  border-radius:4px;cursor:pointer;line-height:1.3;white-space:normal!important;
+  text-align:center;}
+.btn-info:hover{background:#dce8ff;}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(90deg,#0046a8,#0069d9);color:#fff;
+     border-radius:10px;padding:10px 16px;margin-bottom:9px;
+     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.hdr h1{font-size:1.05rem;font-weight:800;}
+.hdr p{font-size:.68rem;opacity:.82;}
+.version-badge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);
+               border-radius:5px;padding:2px 9px;font-size:.68rem;font-weight:700;}
+
+/* ── TABS ── */
+.tab-bar{display:flex;gap:0;margin-bottom:9px;border-bottom:2px solid #c8d8f0;}
+.tab-btn{padding:6px 16px;border:none;background:none;font-size:.75rem;font-weight:700;
+         color:#668;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;
+         transition:all .2s;border-radius:5px 5px 0 0;}
+.tab-btn:hover{background:#e8f0ff;color:#0046a8;}
+.tab-btn.active{color:#0046a8;border-bottom-color:#0046a8;background:#f0f6ff;}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+
+/* ── CONTROLS ── */
+.ctrl-bar{display:flex;flex-wrap:wrap;gap:7px;background:#f0f4ff;
+          border:1px solid #c8d8f0;border-radius:8px;padding:8px 12px;
+          margin-bottom:8px;align-items:center;}
+.cg{display:flex;flex-direction:column;gap:3px;}
+.cg label,.cg .cg-label{font-size:.67rem;font-weight:700;color:#334;display:block;}
+.cg select{padding:4px 7px;border-radius:4px;border:1px solid #b0c4e0;font-size:.75rem;}
+.cg input[type=range]{width:110px;cursor:pointer;}
+.br{display:flex;gap:4px;}
+button{padding:5px 11px;border-radius:5px;border:none;font-weight:700;font-size:.72rem;
+       cursor:pointer;transition:all .18s;white-space:nowrap;}
+button:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px);}
+button:disabled{background:#adb5bd!important;color:#fff!important;
+                cursor:not-allowed;transform:none!important;}
+.btn-green{background:#28a745;color:#fff;}
+.btn-teal {background:#17a2b8;color:#fff;}
+.btn-blue {background:#0056b3;color:#fff;}
+.btn-ora  {background:#fd7e14;color:#fff;}
+.btn-pur  {background:#6610f2;color:#fff;}
+.btn-icmp {background:#00838f;color:#fff;}
+.btn-arp  {background:#6a1b9a;color:#fff;}
+.btn-frag {background:#b71c1c;color:#fff;}
+.btn-quiz {background:#1565c0;color:#fff;}
+.cb-row{display:flex;align-items:center;gap:4px;font-size:.7rem;}
+.cb-row input{width:auto;}
+
+/* ── PHASE BAR ── */
+.phase-bar{display:flex;align-items:center;gap:4px;margin-bottom:8px;flex-wrap:wrap;}
+.pill{padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;
+      border:2px solid transparent;opacity:.28;transition:all .35s;}
+.pill.active{opacity:1;transform:scale(1.1);}
+.p-arp{border-color:#6a1b9a;color:#6a1b9a;background:#f3e5f5;}
+.p-dns{border-color:#17a2b8;color:#17a2b8;background:#e0f7fb;}
+.p-syn{border-color:#6610f2;color:#6610f2;background:#f0e8ff;}
+.p-enc{border-color:#fd7e14;color:#fd7e14;background:#fff3e0;}
+.p-net{border-color:#0056b3;color:#0056b3;background:#e3eeff;}
+.p-ack{border-color:#e83e8c;color:#c2255c;background:#ffe0ec;}
+.p-dec{border-color:#28a745;color:#28a745;background:#e8f8ed;}
+.p-icmp{border-color:#00838f;color:#00838f;background:#e0f7fa;}
+.p-frag{border-color:#b71c1c;color:#b71c1c;background:#ffebee;}
+.psep{color:#bbb;font-size:.7rem;}
+
+/* ── TOPO LEGEND ── */
+.topo-leg{display:flex;align-items:center;gap:8px;background:#fff;
+          border:1px solid #d0daf0;border-radius:7px;padding:5px 12px;
+          margin-bottom:8px;font-size:.67rem;flex-wrap:wrap;}
+.tnode{display:flex;align-items:center;gap:3px;font-weight:700;}
+.tarr{color:#aaa;}
+.tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:.6rem;
+     font-weight:700;border:1px solid;white-space:nowrap;}
+.th{background:#fff3e0;color:#e65100;border-color:#ffb74d;}
+.tr{background:#e8f5e9;color:#2e7d32;border-color:#81c784;}
+.td{background:#ede7f6;color:#4527a0;border-color:#9575cd;}
+
+/* ── SIM GRID ── */
+.sim-wrap{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.stack-col{display:flex;flex-direction:column;min-width:0;}
+.stack-col h2{text-align:center;font-size:.66rem;font-weight:700;color:#0046a8;
+              margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.osi-stack{border:2px solid #d0daf0;border-radius:6px;padding:5px;background:#f8faff;}
+
+/* ── LAYERS ── */
+.layer{background:#eef2ff;height:var(--lh);margin:3px 0;border-radius:5px;
+       border-left:5px solid #007bff;display:flex;align-items:center;
+       padding:0 5px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.layer:hover:not(.empty-layer){background:#dce8ff;}
+.icon{font-size:1em;margin-right:4px;flex-shrink:0;}
+.linfo{display:flex;flex-direction:column;flex:1;min-width:0;}
+.lname{font-weight:700;font-size:.64rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ldev{font-size:.55rem;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pdu-b{font-size:.53rem;font-weight:700;padding:1px 4px;border-radius:6px;
+       background:#dce8ff;color:#0046a8;border:1px solid #b0c8f0;
+       white-space:nowrap;margin-left:2px;flex-shrink:0;}
+
+/* layer colors OSI */
+.layer[data-lv="7"]{border-color:#9b59b6;}
+.layer[data-lv="6"]{border-color:#e67e22;}
+.layer[data-lv="5"]{border-color:#f39c12;}
+.layer[data-lv="4"]{border-color:#27ae60;}
+.layer[data-lv="3"]{border-color:#e74c3c;}
+.layer[data-lv="2"]{border-color:#2980b9;}
+.layer[data-lv="1"]{border-color:#7f8c8d;}
+.layer[data-lv="T4"]{border-color:#9b59b6;}
+.layer[data-lv="T3"]{border-color:#27ae60;}
+.layer[data-lv="T2"]{border-color:#e74c3c;}
+.layer[data-lv="T1"]{border-color:#2980b9;}
+
+.layer.active{transform:scale(1.025);box-shadow:0 0 14px rgba(0,120,255,.35);
+              background:#cceeff;border-color:#0099cc!important;}
+.layer.active[data-lv="7"]{background:#f3e8ff;border-color:#8e44ad!important;box-shadow:0 0 14px rgba(142,68,173,.4)!important;}
+.layer.active[data-lv="4"],.layer.active[data-lv="T3"]{background:#d5f5e3;border-color:#1e8449!important;box-shadow:0 0 14px rgba(39,174,96,.4)!important;}
+.layer.active[data-lv="3"],.layer.active[data-lv="T2"]{background:#fde8e8;border-color:#c0392b!important;box-shadow:0 0 14px rgba(192,57,43,.4)!important;}
+.layer.active[data-lv="2"],.layer.active[data-lv="T1"]{background:#d6eaf8;border-color:#1a5276!important;}
+.layer.active[data-lv="1"]{background:#e8e8e8;border-color:#555!important;}
+.dce-col .layer{border-left-color:#7b1fa2!important;background:#f3e5f5;}
+.dce-col .layer.active{background:#e1bee7!important;border-color:#6a1b9a!important;box-shadow:0 0 14px rgba(106,27,154,.4)!important;}
+.router-col .layer{border-left-color:#2e7d32!important;background:#f1f8e9;}
+.router-col .layer.active{background:#c8e6c9!important;border-color:#1b5e20!important;box-shadow:0 0 14px rgba(46,125,50,.4)!important;}
+.empty-layer{visibility:hidden;background:transparent!important;border:none!important;cursor:default!important;}
+.layer.ack-hi{background:#ffe0ec!important;border-color:#c2255c!important;box-shadow:0 0 14px rgba(194,37,92,.4)!important;transform:scale(1.025);}
+.layer.arp-hi{background:#f3e5f5!important;border-color:#6a1b9a!important;box-shadow:0 0 14px rgba(106,27,154,.4)!important;transform:scale(1.025);}
+.layer.icmp-hi{background:#e0f7fa!important;border-color:#00838f!important;box-shadow:0 0 14px rgba(0,131,143,.4)!important;transform:scale(1.025);}
+.layer.frag-hi{background:#ffebee!important;border-color:#b71c1c!important;box-shadow:0 0 14px rgba(183,28,28,.4)!important;transform:scale(1.025);}
+
+/* ── FRAGMENT STRIP ── */
+.frag-strip{
+  position:absolute;bottom:0;left:0;right:0;height:6px;
+  display:flex;gap:1px;padding:0 2px;
+}
+.frag-piece{
+  flex:1;border-radius:2px;height:100%;
+  transition:opacity .3s;
+}
+
+/* ── NET DIAGRAM ── */
+.net-diag{margin:4px 0 7px;height:48px;position:relative;width:100%;}
+#net-svg{width:100%;height:100%;overflow:visible;}
+.ln-lan{stroke:#343a40;stroke-width:2.5;stroke-dasharray:8 5;fill:none;}
+.ln-wan{stroke:#7b1fa2;stroke-width:2.5;stroke-dasharray:14 4;fill:none;}
+.net-lbl{position:absolute;bottom:2px;font-size:.57rem;font-weight:700;color:#555;
+         white-space:nowrap;transform:translateX(-50%);}
+#net-dot{position:absolute;width:11px;height:11px;border-radius:50%;
+         background:#ffc107;border:2px solid #333;display:none;top:16px;
+         transform:translateX(-50%);transition:left .5s linear;
+         box-shadow:0 0 8px rgba(255,193,7,.7);}
+
+/* ── MOVING PACKET ── */
+#pkt{position:absolute;opacity:0;min-width:80px;
+     height:calc(var(--lh) - 10px);background:#ffc107;
+     border:2px solid #333;border-radius:5px;
+     display:flex;flex-direction:column;justify-content:center;align-items:center;
+     font-family:monospace;font-weight:700;font-size:9px;white-space:nowrap;
+     padding:0 7px;z-index:20;cursor:pointer;
+     transform:translate(-50%,-50%);
+     transition:transform var(--anim) cubic-bezier(.68,-.55,.27,1.55),
+                opacity .35s ease,background-color .25s;
+     box-shadow:0 3px 10px rgba(0,0,0,.28);}
+#pkt .pc{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#pkt .pp{font-size:7.5px;opacity:.6;font-weight:400;
+         border-top:1px solid rgba(0,0,0,.18);width:100%;
+         text-align:center;padding-top:1px;margin-top:1px;}
+#pkt.corrupted{background:#dc3545;color:#fff;border-color:#8b0000;}
+#pkt.ctrl    {background:#6610f2;color:#fff;border-color:#3d0087;}
+#pkt.ackpkt  {background:#f783ac;color:#3d0023;border-color:#c2255c;}
+#pkt.icmppkt {background:#00838f;color:#fff;border-color:#004d57;}
+#pkt.arppkt  {background:#6a1b9a;color:#fff;border-color:#38006b;}
+#pkt.fragpkt {background:#b71c1c;color:#fff;border-color:#7f0000;}
+
+/* ── LOG TOGGLE ── */
+#log-toggle-btn{position:fixed;bottom:16px;right:16px;z-index:500;
+  background:#0d1a2e;color:#74c0fc;border:2px solid #1e3a5f;border-radius:8px;
+  padding:7px 13px;font-size:.76rem;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);white-space:nowrap;transition:all .2s;
+  transform:none!important;}
+#log-toggle-btn:hover{background:#1a3a6e;color:#a8d8ff;transform:translateY(-2px)!important;}
+#log-toggle-btn .notif{display:inline-block;width:8px;height:8px;background:#ff6b6b;
+  border-radius:50%;margin-left:4px;vertical-align:middle;animation:blink 1s ease infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* ── LOG DRAWER ── */
+.log-col{position:fixed;top:0;right:0;width:var(--log-w);height:100vh;
+  background:#111827;border-left:2px solid #1e3a5f;display:flex;flex-direction:column;
+  z-index:450;transform:translateX(100%);transition:transform .35s ease;
+  box-shadow:-6px 0 24px rgba(0,0,0,.4);}
+.log-col.open{transform:translateX(0);}
+.log-head{background:#0d1a2e;padding:9px 12px 8px;border-bottom:1px solid #1e3a5f;
+  display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.log-head h3{color:#74c0fc;font-size:.78rem;font-weight:700;flex:1;}
+.log-pdf-btn{background:#1d3557;color:#a8d8ff;border:1px solid #2a4e7a;border-radius:5px;
+  padding:3px 8px;font-size:.68rem;font-weight:600;cursor:pointer;transition:all .2s;
+  flex:none;width:auto;transform:none!important;}
+.log-pdf-btn:hover{background:#265080;color:#fff;}
+#log-close{background:none;border:none;color:#4a8fb5;font-size:18px;cursor:pointer;
+  flex:none;width:auto;padding:0 2px;transform:none!important;}
+#log-close:hover{color:#fff;}
+.log-badge{padding:4px 11px;background:#0d1a2e;border-bottom:1px solid #1e3a5f;
+  font-size:.65rem;color:#4a8fb5;font-family:'Courier New',monospace;
+  flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#log-box{flex:1;overflow-y:auto;padding:6px 9px;font-family:'Courier New',monospace;
+  font-size:.68rem;line-height:1.75;color:#c8d8e8;}
+#log-box::-webkit-scrollbar{width:4px;}
+#log-box::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px;}
+#log-box p{margin:0;padding:1px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+#log-box .error{color:#ff6b6b;font-weight:700;}
+#log-box .success{color:#69db7c;}
+#log-box .info{color:#74c0fc;}
+#log-box .warn{color:#ffd43b;}
+#log-box .ack{color:#f783ac;}
+#log-box .dce{color:#da77f2;}
+#log-box .icmp{color:#4dd0e1;}
+#log-box .arp{color:#ce93d8;}
+#log-box .frag{color:#ef9a9a;}
+
+/* ── SIDE PANELS ── */
+.side-panel{position:fixed;top:0;right:0;width:300px;height:100%;background:#fff;
+  box-shadow:-5px 0 18px rgba(0,0,0,.15);transform:translateX(100%);
+  transition:transform .35s ease;padding:18px 15px;z-index:400;overflow-y:auto;}
+.side-panel.open{transform:translateX(0);}
+.side-panel h3{color:#0046a8;margin-bottom:10px;font-size:.98rem;}
+.close-x{position:absolute;top:10px;right:13px;background:none;border:none;
+  font-size:22px;cursor:pointer;color:#666;width:auto;padding:2px 6px;transform:none!important;}
+.close-x:hover{color:#000;}
+.isec{margin-top:11px;}
+.isec h4{font-size:.78rem;color:#333;margin-bottom:3px;}
+.isec p{font-size:.76rem;color:#555;line-height:1.5;}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;}
+.chip{padding:2px 6px;border-radius:8px;background:#e3ecff;color:#003a8c;
+  font-size:.65rem;font-weight:600;border:1px solid #b0c8f5;}
+#insp-content{font-family:monospace;font-size:10px;white-space:pre;
+  background:#f5f7fc;padding:9px;border-radius:5px;
+  border:1px solid #dce4f5;overflow-x:auto;}
+
+/* ── QUIZ PANEL ── */
+#quiz-panel{background:#fff;border:2px solid #1565c0;border-radius:10px;
+  padding:18px;margin-top:0;}
+.quiz-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;}
+.quiz-header h2{color:#1565c0;font-size:.95rem;}
+.quiz-score-bar{display:flex;gap:16px;font-size:.78rem;}
+.quiz-score-val{font-weight:700;color:#0046a8;}
+.quiz-progress{background:#e3ecff;border-radius:8px;height:8px;width:200px;overflow:hidden;}
+.quiz-progress-fill{background:linear-gradient(90deg,#1565c0,#42a5f5);
+  height:100%;border-radius:8px;transition:width .5s;}
+.quiz-q{font-size:.88rem;font-weight:600;margin-bottom:14px;line-height:1.5;color:#1a2030;}
+.quiz-opts{display:flex;flex-direction:column;gap:7px;}
+.quiz-opt{padding:9px 14px;border:2px solid #c8d8f0;border-radius:7px;
+  cursor:pointer;font-size:.82rem;transition:all .22s;background:#f8faff;
+  display:flex;align-items:center;gap:9px;}
+.quiz-opt:hover:not(.answered){border-color:#1565c0;background:#e8f0ff;}
+.quiz-opt.correct{border-color:#28a745;background:#d4edda;color:#155724;}
+.quiz-opt.wrong{border-color:#dc3545;background:#f8d7da;color:#721c24;}
+.opt-letter{width:22px;height:22px;border:2px solid #9ab;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  font-size:.72rem;flex-shrink:0;transition:all .22s;}
+.quiz-opt.correct .opt-letter{background:#28a745;color:#fff;border-color:#28a745;}
+.quiz-opt.wrong   .opt-letter{background:#dc3545;color:#fff;border-color:#dc3545;}
+.quiz-feedback{margin-top:11px;padding:10px 14px;border-radius:7px;
+  font-size:.8rem;line-height:1.5;display:none;}
+.quiz-feedback.show{display:block;animation:fadeIn .3s ease;}
+.fb-ok{background:#d4edda;border:1px solid #28a745;color:#155724;}
+.fb-ko{background:#f8d7da;border:1px solid #dc3545;color:#721c24;}
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+.quiz-cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;
+  font-size:.62rem;font-weight:700;margin-bottom:8px;
+  background:#e3ecff;color:#0046a8;border:1px solid #b0c8f5;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.quiz-result{text-align:center;padding:24px 0;}
+.quiz-result .score-big{font-size:3.5rem;font-weight:900;line-height:1;}
+.quiz-result .grade{font-size:1.4rem;font-weight:700;margin:6px 0;}
+.quiz-result p{font-size:.85rem;color:#555;}
+
+/* ── LAVAGNA DIDATTICA ── */
+.board-intro{background:linear-gradient(90deg,#0046a8,#0069d9);color:#fff;
+  border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:.83rem;line-height:1.6;}
+.board-intro b{color:#ffe082;}
+.board-card{background:#fff;border:1px solid #d0daf0;border-radius:8px;
+  padding:12px 16px;margin-bottom:12px;}
+.board-card h3{color:#0046a8;font-size:.92rem;margin-bottom:6px;
+  display:flex;align-items:center;gap:6px;}
+.board-card p{font-size:.79rem;line-height:1.65;color:#333;margin-bottom:6px;}
+.board-card ul{margin:6px 0 6px 18px;font-size:.79rem;line-height:1.6;color:#333;}
+.board-card li{margin-bottom:3px;}
+.board-note{background:#fff8e1;border-left:4px solid #ffb300;border-radius:4px;
+  padding:7px 11px;font-size:.77rem;color:#5d4400;margin-top:7px;line-height:1.55;}
+.board-note b{color:#8a6100;}
+.board-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:820px){.board-grid{grid-template-columns:1fr;}}
+.encap-chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:10px 0;
+  font-family:'Courier New',monospace;font-size:.68rem;}
+.encap-box{border:2px solid #b0c4e0;border-radius:5px;padding:6px 9px;
+  background:#f0f4ff;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-width:70px;}
+.encap-box .eb-t{font-weight:700;color:#0046a8;}
+.encap-box .eb-s{color:#666;font-size:.62rem;}
+.encap-arrow{display:flex;align-items:center;padding:0 5px;color:#999;font-size:1rem;}
+.mis-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:6px;}
+.mis-table td{padding:5px 8px;border-bottom:1px solid #eef2f8;vertical-align:top;}
+.mis-table .mis-x{color:#c0392b;font-weight:700;white-space:nowrap;}
+.mis-table .mis-ok{color:#1a7a3a;font-weight:700;white-space:nowrap;}
+.layer-map-table{width:100%;border-collapse:collapse;font-size:.76rem;margin-top:6px;}
+.layer-map-table th{background:#0046a8;color:#fff;padding:5px 8px;text-align:left;font-size:.73rem;}
+.layer-map-table td{padding:5px 8px;border-bottom:1px solid #eef2f8;}
+.layer-map-table tr:nth-child(even) td{background:#f7f9ff;}
+.who-reads-table{width:100%;border-collapse:collapse;font-size:.77rem;margin-top:6px;}
+.who-reads-table th{background:#2e7d32;color:#fff;padding:5px 8px;text-align:left;font-size:.73rem;}
+.who-reads-table td{padding:5px 8px;border-bottom:1px solid #eef2f8;}
+.who-reads-table tr:nth-child(even) td{background:#f4faf5;}
+
+/* ── MODALITÀ ERRORE GUIDATO ── */
+.gq-overlay{position:fixed;inset:0;background:rgba(10,16,30,.55);z-index:800;
+  display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;padding:16px;}
+.gq-overlay.show{opacity:1;pointer-events:auto;}
+.gq-box{background:#fff;border-radius:12px;padding:20px 22px;max-width:440px;width:100%;
+  box-shadow:0 12px 40px rgba(0,0,0,.35);}
+.gq-box h3{color:#b71c1c;font-size:.92rem;margin-bottom:9px;}
+.gq-box p{font-size:.8rem;color:#333;line-height:1.55;margin-bottom:12px;}
+.gq-opts{display:flex;flex-direction:column;gap:7px;}
+.gq-opt{padding:9px 13px;border:2px solid #c8d8f0;border-radius:7px;cursor:pointer;
+  font-size:.79rem;font-weight:600;text-align:left;background:#f8faff;transition:all .2s;}
+.gq-opt:hover:not(:disabled){border-color:#b71c1c;background:#fff0f0;}
+.gq-opt.correct{border-color:#28a745;background:#d4edda;color:#155724;}
+.gq-opt.wrong{border-color:#dc3545;background:#f8d7da;color:#721c24;}
+.gq-fb{margin-top:11px;padding:9px 12px;border-radius:7px;font-size:.78rem;line-height:1.5;display:none;}
+.gq-fb.show{display:block;}
+.gq-cont{margin-top:12px;text-align:right;display:none;}
+.gq-cont.show{display:block;}
+
+/* ── HEADER EXTRA: credito, zoom, nav sito ── */
+.credit{font-size:.66rem!important;opacity:.8;margin-top:2px;}
+.credit a{color:#ffe082;text-decoration:none;font-weight:700;}
+.credit a:hover{text-decoration:underline;}
+.hdr-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.zoom-ctrl{display:flex;gap:2px;background:rgba(255,255,255,.14);border-radius:6px;padding:2px;}
+.zoom-ctrl button{background:transparent;color:#fff;border:none;padding:4px 9px;
+  font-size:.72rem;font-weight:800;border-radius:4px;}
+.zoom-ctrl button:hover{background:rgba(255,255,255,.22);}
+#help-btn{background:#ffc107;color:#3d2b00;}
+.site-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;}
+.site-nav-link{padding:6px 13px;border-radius:6px;background:#fff;border:1px solid #c8d8f0;
+  color:#0046a8;font-size:.74rem;font-weight:700;text-decoration:none;transition:all .18s;}
+.site-nav-link:hover{background:#e8f0ff;}
+.site-nav-link.active{background:#0046a8;color:#fff;border-color:#0046a8;}
+
+/* ── BACK TO TOP ── */
+#top-btn{position:fixed;bottom:16px;left:16px;z-index:500;
+  background:#0d1a2e;color:#74c0fc;border:2px solid #1e3a5f;border-radius:50%;
+  width:42px;height:42px;font-size:1.1rem;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.35);transition:all .2s;
+  opacity:0;pointer-events:none;transform:translateY(8px);
+  display:flex;align-items:center;justify-content:center;}
+#top-btn.show{opacity:1;pointer-events:auto;transform:none;}
+#top-btn:hover{background:#1a3a6e;color:#a8d8ff;transform:translateY(-2px);}
+
+/* ── MISC ── */
+@keyframes fg{0%,100%{box-shadow:0 0 0 0 transparent;}50%{box-shadow:0 0 26px 7px #28a74588;}}
+.final-glow{animation:fg .65s ease 3;}
+/* Il pacchetto segue lo zoom interno A− / A / A+ */
+#pkt {
+  min-width: calc(80px * var(--zoom));
+  height: calc(var(--lh) - 10px * var(--zoom));
+  font-size: calc(9px * var(--zoom));
+  padding: 0 calc(7px * var(--zoom));
+  border-width: calc(2px * var(--zoom));
+  border-radius: calc(5px * var(--zoom));
+}
+
+#pkt .pc {
+  max-width: calc(140px * var(--zoom));
+}
+
+#pkt .pp {
+  font-size: calc(7.5px * var(--zoom));
+  border-top-width: calc(1px * var(--zoom));
+  padding-top: calc(1px * var(--zoom));
+  margin-top: calc(1px * var(--zoom));
+}
+</style>
+</head>
+<body>
+<div class="main-col">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <h1>🔬 NetLab — ISO/OSI &amp; TCP/IP Simulator</h1>
+    <p>Incapsulamento · ARP · ICMP/Traceroute · Frammentazione IP · Quiz interattivo</p>
+    <p class="credit">📚 Una risorsa di <a href="https://www.learningobjects.org" target="_blank" rel="noopener">LearningObjects.org</a></p>
+  </div>
+  <div class="hdr-tools">
+    <div class="zoom-ctrl" title="Dimensione testi e riquadri">
+      <button id="zoom-out" type="button">A−</button>
+      <button id="zoom-reset" type="button">A</button>
+      <button id="zoom-in" type="button">A+</button>
+    </div>
+    <button id="help-btn" type="button">❓ Come si usa?</button>
+    <span class="version-badge">v5.6</span>
+  </div>
+</div>
+
+<!-- SITE NAV -->
+<div class="site-nav">
+  <span class="site-nav-link active">📡 Simulatore</span>
+  <a href="glossario.html" class="site-nav-link">📖 Glossario &amp; Comandi</a>
+  <a href="mappa_tcpip_v5_6.html" class="site-nav-link">🗺️ Mappa Concettuale</a>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="sim">📡 Simulatore</button>
+  <button class="tab-btn"        data-tab="board">📝 Lavagna Didattica</button>
+  <button class="tab-btn"        data-tab="quiz">🎯 Quiz</button>
+</div>
+
+<!-- ══════════════ TAB: SIMULATORE ══════════════ -->
+<div class="tab-pane active" id="tab-sim">
+
+<!-- CONTROLS -->
+<div class="ctrl-bar">
+  <div class="cg">
+    <label for="model-sel">📐 Modello</label>
+    <select id="model-sel">
+      <option value="OSI">ISO/OSI (7 Livelli)</option>
+      <option value="TCPIP">TCP/IP (4 Livelli)</option>
+    </select>
+  </div>
+  <div class="cg">
+    <span class="cg-label">🌐 Scenari principali</span>
+    <div class="br">
+      <div class="btn-pair">
+        <button id="btn-web"  class="btn-green">Web (TCP)</button>
+        <button class="btn-info" data-info="web" type="button">❓ cosa fa?</button>
+      </div>
+      <div class="btn-pair">
+        <button id="btn-dns"  class="btn-teal">DNS (UDP)</button>
+        <button class="btn-info" data-info="dns" type="button">❓ cosa fa?</button>
+      </div>
+      <div class="btn-pair">
+        <button id="btn-full" class="btn-blue">Naviga Web</button>
+        <button class="btn-info" data-info="full" type="button">❓ cosa fa?</button>
+      </div>
+    </div>
+  </div>
+  <div class="cg">
+    <span class="cg-label">🔬 Scenari avanzati</span>
+    <div class="br">
+      <div class="btn-pair">
+        <button id="btn-arp"  class="btn-arp">🔎 ARP</button>
+        <button class="btn-info" data-info="arp" type="button">❓ cosa fa?</button>
+      </div>
+      <div class="btn-pair">
+        <button id="btn-icmp" class="btn-icmp">📶 ICMP/Ping</button>
+        <button class="btn-info" data-info="icmp" type="button">❓ cosa fa?</button>
+      </div>
+      <div class="btn-pair">
+        <button id="btn-tr"   class="btn-icmp" style="background:#006064">🗺 Traceroute</button>
+        <button class="btn-info" data-info="tr" type="button">❓ cosa fa?</button>
+      </div>
+      <div class="btn-pair">
+        <button id="btn-frag" class="btn-frag">✂ Frammentazione</button>
+        <button class="btn-info" data-info="frag" type="button">❓ cosa fa?</button>
+      </div>
+    </div>
+  </div>
+  <div class="cg">
+    <span class="cg-label">⏯ Controlli</span>
+    <div class="br">
+      <button id="btn-pause" class="btn-ora" disabled>⏸ Pausa</button>
+      <button id="btn-step"  class="btn-pur" disabled>▶ Step</button>
+    </div>
+  </div>
+  <div class="cg">
+    <label for="speed">⚡ Velocità (◀lento·veloce▶)</label>
+    <input type="range" id="speed" min="50" max="2400" value="1800" step="50">
+  </div>
+  <div class="cg">
+    <span class="cg-label">⚙ Opzioni</span>
+    <div class="cb-row"><input type="checkbox" id="err-chk"><label for="err-chk">Simula errore FCS</label></div>
+    <div class="cb-row" style="margin-top:3px"><input type="checkbox" id="guided-err-chk"><label for="guided-err-chk">🎯 Modalità Errore Guidato</label></div>
+    <div class="cb-row" style="margin-top:3px"><input type="checkbox" id="rt-tog"><label for="rt-tog">Round-trip</label></div>
+    <div class="cb-row" style="margin-top:3px"><input type="checkbox" id="snd-chk" checked><label for="snd-chk">🔔 Audio/notifica a consegna</label></div>
+  </div>
+</div>
+
+<!-- PHASE BAR -->
+<div class="phase-bar">
+  <span class="pill p-arp"  id="ph-arp">⓪ ARP</span><span class="psep">→</span>
+  <span class="pill p-dns"  id="ph-dns">① DNS</span><span class="psep">→</span>
+  <span class="pill p-syn"  id="ph-syn">② SYN</span><span class="psep">→</span>
+  <span class="pill p-enc"  id="ph-enc">③ Incapsula</span><span class="psep">→</span>
+  <span class="pill p-net"  id="ph-net">④ Routing</span><span class="psep">→</span>
+  <span class="pill p-ack"  id="ph-ack">⑤ ACK↩</span><span class="psep">→</span>
+  <span class="pill p-dec"  id="ph-dec">⑥ Decapsula</span><span class="psep">|</span>
+  <span class="pill p-icmp" id="ph-icmp">📶 ICMP</span><span class="psep">|</span>
+  <span class="pill p-frag" id="ph-frag">✂ FRAG</span>
+</div>
+
+<!-- TOPOLOGY LEGEND -->
+<div class="topo-leg">
+  <div class="tnode"><span class="tag th">💻 Client</span></div>
+  <span class="tarr">──LAN──▶</span>
+  <div class="tnode"><span class="tag tr">🔀 Router-A</span><small style="color:#666;margin-left:3px">L1+L2+L3</small></div>
+  <span class="tarr">──WAN──▶</span>
+  <div class="tnode" title="Il DCE (es. modem/CSU-DSU) è un nodo di rete a sé, tipicamente al confine con l'operatore WAN: NON è dentro il PC Client, che invece è un DTE."><span class="tag td">📟 DCE</span><small style="color:#666;margin-left:3px">L1</small></div>
+  <span class="tarr">──WAN──▶</span>
+  <div class="tnode"><span class="tag tr">🔀 Router-B</span><small style="color:#666;margin-left:3px">L1+L2+L3</small></div>
+  <span class="tarr">──LAN──▶</span>
+  <div class="tnode"><span class="tag th">🖥 Server</span></div>
+</div>
+
+<!-- SIM AREA -->
+<div class="sim-wrap" id="sim-wrap">
+  <div class="stack-col">
+    <h2>💻 Client</h2>
+    <div class="osi-stack" id="s-client"></div>
+  </div>
+  <div class="stack-col router-col">
+    <h2>🔀 Router-A</h2>
+    <div class="osi-stack" id="s-rta"></div>
+  </div>
+  <div class="stack-col dce-col">
+    <h2>📟 DCE</h2>
+    <div class="osi-stack" id="s-dce"></div>
+  </div>
+  <div class="stack-col router-col">
+    <h2>🔀 Router-B</h2>
+    <div class="osi-stack" id="s-rtb"></div>
+  </div>
+  <div class="stack-col">
+    <h2>🖥 Server</h2>
+    <div class="osi-stack" id="s-server"></div>
+  </div>
+  <div id="pkt"><span class="pc">Dati</span><span class="pp"></span></div>
+</div>
+
+<!-- NET DIAGRAM -->
+<div class="net-diag" id="net-diag">
+  <svg id="net-svg">
+    <line id="nl-lan1" class="ln-lan" x1="0" y1="20" x2="10" y2="20"/>
+    <line id="nl-wan1" class="ln-wan" x1="0" y1="20" x2="10" y2="20"/>
+    <line id="nl-wan2" class="ln-wan" x1="0" y1="20" x2="10" y2="20"/>
+    <line id="nl-lan2" class="ln-lan" x1="0" y1="20" x2="10" y2="20"/>
+  </svg>
+  <div id="net-dot"></div>
+  <span class="net-lbl" id="lbl-c">Client</span>
+  <span class="net-lbl" id="lbl-ra">Router-A</span>
+  <span class="net-lbl" id="lbl-dce">DCE</span>
+  <span class="net-lbl" id="lbl-rb">Router-B</span>
+  <span class="net-lbl" id="lbl-s">Server</span>
+</div>
+
+</div><!-- /tab-sim -->
+
+<!-- ══════════════ TAB: LAVAGNA DIDATTICA ══════════════ -->
+<div class="tab-pane" id="tab-board">
+
+<div class="board-intro">
+  📝 <b>Lavagna Didattica</b> — Questa sezione non simula: <b>spiega</b>. Ogni concetto qui sotto
+  illustra i concetti principali che il simulatore rappresenta in forma semplificata. Usala prima
+  della simulazione per capire il "perché", o dopo per fissare i concetti.
+</div>
+
+<div class="board-card">
+  <h3>1️⃣ Due modelli, una sola realtà</h3>
+  <p>Il modello <b>ISO/OSI</b> (7 livelli) è un modello <i>teorico e didattico</i>, definito dall'ISO
+  nel 1984 per descrivere in modo generale qualunque comunicazione di rete. Il modello
+  <b>TCP/IP</b> (4 livelli) è invece quello <i>realmente implementato</i> su Internet: nasce prima
+  dell'OSI e ha una struttura più pratica. Non sono "in competizione": l'OSI è la lente
+  concettuale con cui si studia il TCP/IP, che è quello che gira davvero dentro i router e i
+  sistemi operativi.</p>
+  <table class="layer-map-table">
+    <thead><tr><th>ISO/OSI (7 livelli)</th><th>TCP/IP (4 livelli)</th><th>Esempio protocolli</th></tr></thead>
+    <tbody>
+      <tr><td>7. Applicazione</td><td rowspan="3">4. Applicazione</td><td>HTTP, DNS, FTP, SMTP</td></tr>
+      <tr><td>6. Presentazione</td><td>TLS/SSL, cifratura, formati</td></tr>
+      <tr><td>5. Sessione</td><td>Apertura/gestione sessione</td></tr>
+      <tr><td>4. Trasporto</td><td>3. Trasporto</td><td>TCP, UDP</td></tr>
+      <tr><td>3. Rete</td><td>2. Internet</td><td>IP, ICMP</td></tr>
+      <tr><td>2. Collegamento Dati</td><td rowspan="2">1. Accesso alla Rete</td><td>Ethernet, Wi-Fi, PPP, ARP</td></tr>
+      <tr><td>1. Fisico</td><td>Segnali elettrici/ottici/radio</td></tr>
+    </tbody>
+  </table>
+  <div class="board-note"><b>Nota:</b> il livello "Internet" del TCP/IP corrisponde <b>principalmente</b>
+  al livello "Rete" dell'OSI (è un confronto didattico, non un'equivalenza architetturale
+  perfetta): è lì che vive l'IP, ed è il livello a cui lavora un Router. <b>ARP</b> invece si
+  colloca al livello Accesso Rete/Collegamento: mette in relazione un indirizzo IPv4 con un
+  indirizzo MAC operando tramite frame di Livello 2, e le sue richieste broadcast non vengono
+  instradate dai router. Per il suo ruolo di collegamento tra indirizzamento IP e indirizzamento
+  MAC viene talvolta descritto come protocollo "di confine" tra Livello 2 e Livello 3 — ma
+  funzionalmente appartiene all'Accesso Rete.</div>
+</div>
+
+<div class="board-card">
+  <h3>2️⃣ L'incapsulamento: una busta dentro un'altra busta</h3>
+  <p>Scendendo dal livello Applicazione al livello Fisico, ogni livello <b>aggiunge un proprio
+  header</b> (a volte anche un trailer) davanti ai dati ricevuti dal livello superiore, senza mai
+  modificarne il contenuto. Il PDU (Protocol Data Unit) cambia nome ad ogni livello:</p>
+  <div class="encap-chain">
+    <div class="encap-box"><span class="eb-t">Dati</span><span class="eb-s">L7-L5</span></div>
+    <div class="encap-arrow">→</div>
+    <div class="encap-box"><span class="eb-t">Segmento / datagramma</span><span class="eb-s">+ TCP/UDP</span></div>
+    <div class="encap-arrow">→</div>
+    <div class="encap-box"><span class="eb-t">Pacchetto</span><span class="eb-s">+ IP</span></div>
+    <div class="encap-arrow">→</div>
+    <div class="encap-box"><span class="eb-t">Frame</span><span class="eb-s">+ Ethernet</span></div>
+    <div class="encap-arrow">→</div>
+    <div class="encap-box"><span class="eb-t">Bit</span><span class="eb-s">segnale fisico</span></div>
+  </div>
+  <p>Alla ricezione avviene il processo inverso, il <b>decapsulamento</b>: ogni livello rimuove
+  il proprio header e passa il resto al livello superiore. Nessun livello "legge" gli header
+  degli altri livelli — è un principio di incapsulamento stretto, non solo una convenzione grafica.</p>
+</div>
+
+<div class="board-card">
+  <h3>3️⃣ Chi legge cosa: il principio chiave del routing</h3>
+  <p>Il dubbio più comune degli studenti è: "il router legge tutto il pacchetto?" No. Ogni
+  dispositivo di rete elabora i dati <b>solo fino al livello per cui è stato progettato</b>, e
+  ignora tutto quello che sta sopra:</p>
+  <table class="who-reads-table">
+    <thead><tr><th>Dispositivo</th><th>Livelli attivi</th><th>Cosa "vede" e cosa fa</th></tr></thead>
+    <tbody>
+      <tr><td><b>Host</b> (Client/Server)</td><td>Tutti (L1→L7)</td><td>Genera e consuma i dati applicativi.</td></tr>
+      <tr><td><b>Router</b></td><td>L1 + L2 + L3</td><td>Legge l'IP destinazione, decide il next-hop, decrementa il TTL. <b>Non guarda</b> la porta TCP/UDP né il contenuto applicativo.</td></tr>
+      <tr><td><b>Switch</b></td><td>L1 + L2</td><td>Inoltra in base al MAC. Non conosce l'IP.</td></tr>
+      <tr><td><b>DCE</b> (modem/CSU-DSU)</td><td>Solo L1</td><td>Rigenera o adatta il segnale sul collegamento. Non legge né MAC né IP: è "cieco" a tutto tranne ai bit grezzi.</td></tr>
+    </tbody>
+  </table>
+  <div class="board-note"><b>Perché conta:</b> è per questo che nella topologia
+  <i>Client → Router-A → DCE → Router-B → Server</i> il DCE non compare mai nei log come
+  "instrada" o "legge IP" — quelle azioni sono di competenza esclusiva dei Router.</div>
+</div>
+
+<div class="board-card">
+  <h3>4️⃣ Il router cambia il frame; gli indirizzi IP restano (senza NAT)</h3>
+  <div class="board-grid">
+    <div>
+      <p><b>Cosa cambia ad ogni hop:</b></p>
+      <ul>
+        <li>Sulle LAN, il router usa nuovi <b>MAC sorgente e destinazione</b> nel frame Ethernet.
+        Sul collegamento WAN seriale prepara un nuovo frame senza indirizzi MAC Ethernet.</li>
+        <li><b>TTL</b> (Time To Live) dell'header IP — decrementato di 1 ad ogni router, per
+        evitare loop infiniti di instradamento.</li>
+        <li>Il controllo di integrità del frame sul nuovo collegamento; per Ethernet è il <b>FCS</b>.</li>
+      </ul>
+    </div>
+    <div>
+      <p><b>Cosa resta invariato in questo esempio (senza NAT):</b></p>
+      <ul>
+        <li>Indirizzo <b>IP sorgente e destinazione</b> — restano quelli originali dal Client al
+        Server, per tutto il tragitto.</li>
+        <li>Il <b>payload applicativo</b> (dati HTTP, query DNS…) — nessun router lo tocca.</li>
+        <li>Le <b>porte</b> TCP/UDP — impostate una sola volta dall'host mittente.</li>
+      </ul>
+    </div>
+  </div>
+  <p>È l'errore concettuale più frequente: pensare che il MAC "viaggi" fino al server. In realtà
+  gli indirizzi MAC Ethernet hanno significato solo <b>sulla LAN locale</b>;
+  l'IP invece ha significato <b>end-to-end</b>, dal mittente originale al destinatario finale.</p>
+</div>
+
+<div class="board-card">
+  <h3>5️⃣ ARP: "chi ha questo indirizzo IP?"</h3>
+  <p>Prima di poter costruire un frame Ethernet, un host deve conoscere il MAC del destinatario
+  del segmento successivo. Lo scopre con <b>ARP</b> (Address Resolution Protocol), un protocollo
+  del livello Accesso Rete che opera tramite frame Ethernet:</p>
+  <ul>
+    <li>L'host invia una <b>ARP Request in broadcast</b> (FF:FF:FF:FF:FF:FF): "chi ha l'IP X?"</li>
+    <li>Solo il proprietario di quell'IP risponde con una <b>ARP Reply in unicast</b>, contenente
+    il proprio MAC.</li>
+    <li>Il mittente salva l'associazione IP→MAC nella propria <b>cache ARP</b>, per non ripetere
+    la richiesta ad ogni pacchetto.</li>
+  </ul>
+  <div class="board-note"><b>ARP mette in relazione un indirizzo IPv4 con un indirizzo MAC.</b>
+  Opera nella rete locale mediante frame di livello Data Link e le sue richieste broadcast non
+  vengono instradate dai router. Per il suo ruolo di collegamento tra indirizzamento IP e
+  indirizzamento MAC viene talvolta descritto come protocollo di confine tra livello 2 e livello
+  3 — ma appartiene funzionalmente all'Accesso Rete, non al livello Internet/Rete.</div>
+  <div class="board-note"><b>Punto sottile:</b> ARP è <b>locale al segmento LAN</b>. Per
+  raggiungere un server remoto, il Client risolve <i>solo</i> il MAC del proprio gateway
+  (Router-A) — mai quello del server finale, che si trova su una rete diversa.</div>
+</div>
+
+<div class="board-card">
+  <h3>6️⃣ TCP: prima ci si stringe la mano, poi si parla</h3>
+  <p>A differenza di UDP (usato ad es. per il DNS), TCP è <b>orientato alla connessione</b>: prima
+  di scambiare dati apre una connessione con un <b>three-way handshake</b>:</p>
+  <ol style="margin-left:18px;font-size:.79rem;line-height:1.7;">
+    <li><b>SYN</b> — il Client propone un numero di sequenza iniziale.</li>
+    <li><b>SYN-ACK</b> — il Server conferma e propone a sua volta il proprio numero di sequenza.</li>
+    <li><b>ACK</b> — il Client conferma: la connessione è ora stabilita in entrambe le direzioni.</li>
+  </ol>
+  <p>Serve a sincronizzare i numeri di sequenza (necessari per riordinare e verificare i
+  segmenti) e a verificare che il percorso funzioni in entrambe le direzioni <i>prima</i> di
+  spendere risorse per inviare dati veri.</p>
+</div>
+
+<div class="board-card">
+  <h3>7️⃣ L'ACK non è un "segnale di ricevuto": è un pacchetto vero</h3>
+  <p>Un errore comune è immaginare l'ACK come una specie di lucina verde istantanea. In realtà è
+  un <b>segmento TCP a tutti gli effetti</b>: viene generato al livello Trasporto del ricevente,
+  incapsulato fino al livello Fisico, attraversa <i>tutta</i> la topologia di rete (Router, DCE,
+  Router) e viene decapsulato dal mittente originale — esattamente come i dati che conferma.</p>
+</div>
+
+<div class="board-card">
+  <h3>8️⃣ ICMP: il messaggero che non usa le porte</h3>
+  <p>ICMP (usato da <b>Ping</b> e <b>Traceroute</b>) non passa dal livello Trasporto: niente TCP,
+  niente UDP, niente porte. È incapsulato <b>direttamente in IP</b> (Protocol ID = 1).</p>
+  <ul>
+    <li><b>Ping:</b> Echo Request → Echo Reply. Verifica la raggiungibilità di un host.</li>
+    <li><b>Traceroute:</b> sfrutta il TTL. Invia pacchetti con TTL crescente (1, 2, 3…): ogni
+    router che decrementa il TTL a 0 scarta il pacchetto e risponde con un <b>ICMP Time
+    Exceeded</b>, rivelando così, un hop alla volta, l'intero percorso fino alla destinazione.</li>
+  </ul>
+</div>
+
+<div class="board-card">
+  <h3>9️⃣ Quando il pacchetto è troppo grande: la frammentazione IP</h3>
+  <p>Ogni collegamento ha un <b>MTU</b> (Maximum Transmission Unit, es. 1500 byte su Ethernet). Se
+  un pacchetto IP supera l'MTU del link successivo, il <b>Router</b> lo spezza in più frammenti
+  (frammentazione IPv4). Punti chiave:</p>
+  <ul>
+    <li>Il <b>riassemblaggio</b> avviene sempre e solo alla <b>destinazione finale</b>, mai in un
+    router intermedio.</li>
+    <li>Con il flag <b>DF=1</b> ("Don't Fragment") un router che non può inoltrare il pacchetto
+    intero lo <b>scarta</b> e invia un ICMP "Fragmentation Needed" (base della Path MTU
+    Discovery).</li>
+    <li><b>IPv6 non permette</b> la frammentazione nei router intermedi: la responsabilità è solo
+    del mittente, tramite Path MTU Discovery.</li>
+  </ul>
+  <table class="layer-map-table">
+    <thead><tr><th></th><th>IPv4</th><th>IPv6</th></tr></thead>
+    <tbody>
+      <tr><td><b>Chi può frammentare</b></td><td>Il mittente <i>e</i> ogni router lungo il percorso</td><td>Solo il mittente, mai i router</td></tr>
+      <tr><td><b>Router che riceve un pacchetto &gt; MTU</b></td><td>Lo frammenta e inoltra i pezzi</td><td>Lo scarta e invia ICMPv6 "Packet Too Big"</td></tr>
+      <tr><td><b>Come lo scopre il mittente</b></td><td>Flag DF=1 + ICMP "Fragmentation Needed" (opzionale)</td><td>Path MTU Discovery raccomandato; dimensione minima IPv6 1280 byte</td></tr>
+      <tr><td><b>Campo frammentazione</b></td><td>Nell'header IP base (Identification, Flags, Fragment Offset)</td><td>In un Extension Header separato ("Fragment Header"), solo se serve</td></tr>
+      <tr><td><b>Perché la scelta di design</b></td><td>Storicamente semplifica i router, ma li rallenta (calcolo extra)</td><td>Router più veloci e semplici: nessun lavoro extra sui pacchetti in transito</td></tr>
+    </tbody>
+  </table>
+  <div class="board-note"><b>Da ricordare:</b> nel simulatore lo scenario "✂ Frammentazione" mostra il comportamento IPv4
+  (router che frammenta). In IPv6, quello stesso pacchetto troppo grande verrebbe invece <b>scartato da Router-A</b>
+  con un messaggio di errore, e sarebbe il Client a doverlo re-inviare più piccolo dopo la Path MTU Discovery.</div>
+</div>
+
+<div class="board-card">
+  <h3>🚫 Errori concettuali comuni — verifica cosa hai capito</h3>
+  <table class="mis-table">
+    <tbody>
+      <tr><td class="mis-x">✗ Falso</td><td>Il Router legge il contenuto della pagina HTTP che sta instradando.</td></tr>
+      <tr><td class="mis-ok">✓ Vero</td><td>Il Router si ferma al livello IP: instrada senza mai aprire il segmento TCP/UDP o il payload applicativo.</td></tr>
+      <tr><td class="mis-x">✗ Falso</td><td>L'indirizzo MAC del Client arriva fino al Server.</td></tr>
+      <tr><td class="mis-ok">✓ Vero</td><td>Il router sostituisce il frame a ogni collegamento. Senza NAT gli indirizzi IP restano invariati, mentre il TTL diminuisce; i MAC Ethernet valgono sulle LAN.</td></tr>
+      <tr><td class="mis-x">✗ Falso</td><td>Il DCE instrada i pacchetti come un router.</td></tr>
+      <tr><td class="mis-ok">✓ Vero</td><td>Il DCE opera solo a L1: converte segnali, non legge indirizzi di alcun tipo.</td></tr>
+      <tr><td class="mis-x">✗ Falso</td><td>ARP serve a scoprire il MAC del server finale.</td></tr>
+      <tr><td class="mis-ok">✓ Vero</td><td>ARP è locale alla LAN: risolve solo il MAC del prossimo hop (es. il gateway).</td></tr>
+      <tr><td class="mis-x">✗ Falso</td><td>L'ACK è istantaneo e non attraversa la rete.</td></tr>
+      <tr><td class="mis-ok">✓ Vero</td><td>L'ACK è un segmento TCP reale che percorre l'intera topologia, in senso inverso.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="board-note" style="margin-bottom:14px">
+  💡 <b>Suggerimento d'uso in classe:</b> fai eseguire uno scenario nel simulatore, poi torna qui
+  e chiedi agli studenti di indicare, per ogni riga del log generato, <i>quale</i> dei concetti
+  sopra sta osservando in quel momento.
+</div>
+
+</div><!-- /tab-board -->
+
+<!-- ══════════════ TAB: QUIZ ══════════════ -->
+<div class="tab-pane" id="tab-quiz">
+<div id="quiz-panel">
+  <div class="quiz-header">
+    <h2>🎯 Quiz ISO/OSI &amp; TCP/IP</h2>
+    <div class="quiz-score-bar">
+      <span>Punteggio: <span class="quiz-score-val" id="q-score">0/0</span></span>
+      <div class="quiz-progress"><div class="quiz-progress-fill" id="q-prog" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div id="q-container"><!-- rendered by JS --></div>
+  <div class="quiz-nav">
+    <button class="btn-frag" id="q-restart" style="background:#666">↺ Ricomincia</button>
+    <span id="q-nav-info" style="font-size:.73rem;color:#666"></span>
+    <button class="btn-blue" id="q-next" style="display:none">Prossima →</button>
+  </div>
+</div>
+<div class="board-card" id="q-history-card" style="margin-top:12px">
+  <h3>📊 Storico tentativi (salvato su questo PC/browser)</h3>
+  <div id="q-history-list"></div>
+  <button class="btn-frag" id="q-history-clear" style="background:#888;margin-top:8px;font-size:.68rem">🗑 Cancella storico</button>
+</div>
+</div><!-- /tab-quiz -->
+
+</div><!-- /main-col -->
+
+<!-- LOG TOGGLE -->
+<button id="log-toggle-btn">📋 Log <span class="notif" id="log-notif" style="display:none"></span></button>
+
+<!-- BACK TO TOP -->
+<button id="top-btn" title="Torna in cima">⬆</button>
+
+<!-- LOG DRAWER -->
+<div class="log-col" id="log-col">
+  <div class="log-head">
+    <h3>📋 Log Simulazione</h3>
+    <button class="log-pdf-btn" id="pdf-btn">⬇ PDF</button>
+    <button id="log-close">×</button>
+  </div>
+  <div class="log-badge" id="log-badge">Scenario: —</div>
+  <div id="log-box"><p class="info">> Pronto.</p></div>
+</div>
+
+<!-- LAYER INFO PANEL -->
+<div class="side-panel" id="info-panel">
+  <button class="close-x" id="close-info">×</button>
+  <h3 id="ip-title">—</h3>
+  <div class="isec"><h4>Descrizione</h4><p id="ip-desc"></p></div>
+  <div class="isec"><h4>Dispositivi</h4><p id="ip-dev"></p></div>
+  <div class="isec"><h4>Protocolli</h4><div class="chips" id="ip-protos"></div></div>
+  <div class="isec"><h4>PDU</h4><p id="ip-pdu"></p></div>
+  <div class="isec"><h4>Ruolo nel flusso</h4><p id="ip-role"></p></div>
+</div>
+
+<!-- INSPECTOR -->
+<div class="side-panel" id="insp-panel">
+  <button class="close-x" id="close-insp">×</button>
+  <h3>🔍 Packet Inspector</h3>
+  <p style="font-size:.71rem;color:#666;margin-bottom:7px">Header nel PDU corrente:</p>
+  <div id="insp-content">—</div>
+</div>
+
+<!-- SCENARIO INFO -->
+<div class="side-panel" id="scenario-info-panel">
+  <button class="close-x" id="close-scinfo">×</button>
+  <h3 id="sci-title">—</h3>
+  <div class="isec"><h4>Cosa mostra</h4><p id="sci-desc"></p></div>
+  <div class="isec"><h4>Livelli/Protocolli coinvolti</h4><p id="sci-lv"></p></div>
+  <div class="isec"><h4>Quando si usa nella realtà</h4><p id="sci-use"></p></div>
+</div>
+
+<!-- MODALITÀ ERRORE GUIDATO -->
+<div class="gq-overlay" id="gq-overlay">
+  <div class="gq-box">
+    <h3>🎯 Prima di partire: prevedi l'errore</h3>
+    <p>Hai attivato la simulazione di un errore FCS sul frame. <b>Secondo te, in quale punto del
+    percorso il pacchetto verrà rilevato come corrotto e scartato?</b></p>
+    <div class="gq-opts" id="gq-opts"></div>
+    <div class="gq-fb" id="gq-fb"></div>
+    <div class="gq-cont" id="gq-cont"><button class="btn-blue" id="gq-continue">Avvia simulazione →</button></div>
+  </div>
+</div>
+
+<script>
+// Preferenze facoltative: la pagina funziona anche se lo storage è disabilitato.
+const safeStorage={
+  getItem(key){try{return window.localStorage.getItem(key);}catch(e){return null;}},
+  setItem(key,value){try{window.localStorage.setItem(key,value);}catch(e){}},
+  removeItem(key){try{window.localStorage.removeItem(key);}catch(e){}}
+};
+
+document.addEventListener('DOMContentLoaded',()=>{
+const $=id=>document.getElementById(id);
+const elClient=$('s-client'),elRtA=$('s-rta'),elDce=$('s-dce'),
+      elRtB=$('s-rtb'),elServer=$('s-server'),
+      simWrap=$('sim-wrap'),pktEl=$('pkt'),
+      logBox=$('log-box'),logBadge=$('log-badge'),
+      speed=$('speed'),btnPause=$('btn-pause'),btnStep=$('btn-step'),
+      modelSel=$('model-sel'),errChk=$('err-chk'),rtTog=$('rt-tog'),
+      logCol=$('log-col'),logNotif=$('log-notif'),
+      infoPanel=$('info-panel'),inspPanel=$('insp-panel'),
+      sndChk=$('snd-chk'),scInfoPanel=$('scenario-info-panel'),
+      guidedErrChk=$('guided-err-chk'),gqOverlay=$('gq-overlay');
+
+const MOVE=520;
+
+// ─── AUDIO + TOAST NOTIFICA CONSEGNA ──────────────────
+let audioCtx=null;
+function beep(){
+  if(!sndChk||!sndChk.checked)return;
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const t0=audioCtx.currentTime;
+    [880,1320].forEach((freq,i)=>{
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+      osc.type='sine';osc.frequency.value=freq;
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      const start=t0+i*0.11;
+      gain.gain.setValueAtTime(0.0001,start);
+      gain.gain.exponentialRampToValueAtTime(0.18,start+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001,start+0.16);
+      osc.start(start);osc.stop(start+0.18);
+    });
+  }catch(e){/* audio non disponibile: ignora silenziosamente */}
+}
+function showToast(msg){
+  const el=document.createElement('div');
+  el.className='toast';el.textContent=msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),350);},2400);
+}
+function notifyDelivery(msg){
+  beep();
+  showToast(msg||'📦 Pacchetto consegnato con successo!');
+}
+
+// ─── MODALITÀ ERRORE GUIDATO ───────────────────────────
+// Le opzioni e il feedback seguono il modello selezionato: in ISO/OSI si usa la
+// numerazione a 7 livelli (2. Collegamento, 1. Fisico), in TCP/IP il livello
+// Accesso Rete (che in OSI corrisponde a L1+L2, dove DCE opera solo sulla parte
+// fisica). Nessuna numerazione OSI deve comparire mentre è selezionato TCP/IP.
+function gqOptions(){
+  const isOSI=modelSel.value==='OSI';
+  const dlName=M.layers.find(l=>l.name.includes('Collegamento')||l.name.includes('Accesso'))?.name
+    ||(isOSI?'2. Collegamento':'1. Accesso Rete');
+  const dceLabel=isOSI
+    ?(M.layers.find(l=>l.name.includes('Fisico'))?.name||'1. Fisico')
+    :'Accesso Rete (solo parte fisica)';
+  const opts=[
+    {label:`💻 Client — ${dlName}`,correct:false},
+    {label:`🔀 Router-A — ${dlName}`,correct:true},
+    {label:`📟 DCE — ${dceLabel}`,correct:false},
+    {label:`🔀 Router-B — ${dlName}`,correct:false},
+    {label:'Non viene rilevato: il pacchetto arriva comunque',correct:false},
+  ];
+  return {opts,dlName};
+}
+function askGuidedError(){
+  return new Promise(resolve=>{
+    const {opts,dlName}=gqOptions();
+    const optsWrap=$('gq-opts'),fb=$('gq-fb'),cont=$('gq-cont');
+    fb.className='gq-fb';fb.textContent='';cont.className='gq-cont';
+    optsWrap.innerHTML=opts.map((o,i)=>
+      `<button class="gq-opt" data-i="${i}" type="button">${o.label}</button>`).join('');
+    gqOverlay.classList.add('show');
+    optsWrap.querySelectorAll('.gq-opt').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const i=+btn.dataset.i;
+        optsWrap.querySelectorAll('.gq-opt').forEach(b=>b.disabled=true);
+        let outcome;
+        if(opts[i].correct){
+          btn.classList.add('correct');
+          fb.className='gq-fb show';
+          fb.innerHTML=`✅ <b>Esatto!</b> Il frame viene ricostruito e controllato (FCS) ad ogni hop a livello ${dlName}. Router-A è il primo punto in cui il frame corrotto viene verificato e scartato.`;
+          outcome={correct:true,label:opts[i].label};
+        } else {
+          btn.classList.add('wrong');
+          const okBtn=optsWrap.querySelector(`[data-i="${opts.findIndex(o=>o.correct)}"]`);
+          if(okBtn)okBtn.classList.add('correct');
+          fb.className='gq-fb show';
+          fb.innerHTML=`❌ <b>Non esatto.</b> Il punto giusto è <b>Router-A, ${dlName}</b>: ad ogni hop il frame viene ricostruito e il FCS ricalcolato, ed è lì che l'errore viene rilevato per la prima volta.`;
+          outcome={correct:false,label:opts[i].label,correctLabel:opts.find(o=>o.correct).label};
+        }
+        cont.classList.add('show');
+        cont.dataset.outcome=JSON.stringify(outcome);
+      },{once:true});
+    });
+    $('gq-continue').onclick=()=>{gqOverlay.classList.remove('show');let o=null;try{o=JSON.parse(cont.dataset.outcome||'null');}catch(e){}resolve(o);};
+  });
+}
+
+// ─── INFO SCENARI ──────────────────────────────────────
+const SCENARIO_INFO={
+  web:{title:'🌐 Web (TCP)',
+    desc:'Simula una richiesta HTTP non cifrata sulla porta 80: connessione TCP, richiesta e risposta.',
+    lv:'Livello Applicazione (HTTP) → Trasporto (TCP, con ACK) → Rete (IP) → Collegamento (MAC/Ethernet) → Fisico.',
+    use:'È uno scenario semplificato per capire i livelli; non simula HTTPS/TLS.'},
+  dns:{title:'🛰 DNS (UDP)',
+    desc:'Simula una interrogazione DNS: il Client chiede la traduzione di un nome a dominio in indirizzo IP, usando UDP (connectionless, senza handshake).',
+    lv:'Livello Applicazione (DNS) → Trasporto (UDP, niente ACK) → Rete (IP) → Collegamento → Fisico.',
+    use:'La risoluzione precede la connessione al server quando l’indirizzo non è già noto o in cache. In questo scenario DNS usa UDP; può usare anche TCP.'},
+  full:{title:'🧭 Naviga Web (scenario completo)',
+    desc:'Concatena in sequenza tutte le fasi di una navigazione reale: ARP → DNS → TCP handshake (SYN) → richiesta HTTP → risposta del server.',
+    lv:'Attraversa tutti i livelli e tutti i protocolli visti negli altri scenari, in un unico flusso realistico.',
+    use:'Rappresenta una sequenza didattica semplificata di una navigazione HTTP.'},
+  arp:{title:'🔎 ARP',
+    desc:'Mostra come il Client scopre l\'indirizzo MAC del gateway (Router-A) a partire dal suo indirizzo IP, tramite una richiesta broadcast e una risposta unicast.',
+    lv:'Livello 2 (Collegamento): ARP Request/Reply. È un protocollo locale, non attraversa i router.',
+    use:'Per inviare un pacchetto IPv4 unicast sulla LAN occorre il MAC del destinatario locale o del gateway. ARP lo risolve se non è già in cache; la richiesta ARP usa il MAC broadcast.'},
+  icmp:{title:'📶 ICMP/Ping',
+    desc:'Simula un comando "ping": il Client invia un Echo Request al Server e attende un Echo Reply per verificare la raggiungibilità e misurare il tempo di andata/ritorno (RTT).',
+    lv:'Livello 3 (Rete): ICMP viaggia incapsulato in IP, non usa porte TCP/UDP.',
+    use:'Strumento diagnostico più usato per verificare se un host è raggiungibile in rete.'},
+  tr:{title:'🗺 Traceroute',
+    desc:'Mostra hop-by-hop il percorso dei pacchetti verso la destinazione, sfruttando il TTL che si decrementa a ogni router attraversato.',
+    lv:'Livello 3 (Rete): ogni router che scarta il pacchetto per TTL=0 risponde con un messaggio ICMP Time Exceeded.',
+    use:'Usato per diagnosticare dove si trova un problema di rete lungo il percorso verso un server.'},
+  frag:{title:'✂ Frammentazione IP',
+    desc:'Simula un pacchetto più grande della MTU del collegamento: il Router lo divide in frammenti più piccoli, che vengono riassemblati solo dal destinatario finale.',
+    lv:'Livello 3 (Rete): la frammentazione/riassemblaggio è una funzione IP, mai fatta dai router intermedi in IPv6.',
+    use:'Spiega perché a volte le prestazioni di rete calano quando i pacchetti superano la MTU del collegamento più stretto lungo il percorso.'}
+};
+function showScenarioInfo(key){
+  const info=SCENARIO_INFO[key];if(!info)return;
+  $('sci-title').textContent=info.title;
+  $('sci-desc').textContent=info.desc;
+  $('sci-lv').textContent=info.lv;
+  $('sci-use').textContent=info.use;
+  scInfoPanel.classList.add('open');
+}
+document.querySelectorAll('.btn-info').forEach(b=>{
+  b.addEventListener('click',(ev)=>{ev.preventDefault();showScenarioInfo(b.dataset.info);});
+});
+$('close-scinfo').addEventListener('click',()=>scInfoPanel.classList.remove('open'));
+
+// ─── MODELS ────────────────────────────────────────────
+const PDU_MAP={'Applicazione':'Dati','Presentazione':'Dati','Sessione':'Dati',
+ 'Trasporto':'Segmento/datagramma','Rete':'Pacchetto','Internet':'Pacchetto',
+ 'Collegamento':'Frame','Accesso':'Frame','Fisico':'Bit'};
+
+const OSI=[
+ {id:7,lv:'7',name:'7. Applicazione',dev:'PC, Server',pdu:'Dati',icon:'💻',
+  protos:['HTTP','HTTPS','FTP','SMTP','DNS','Telnet'],
+  desc:'Fornisce servizi di rete alle applicazioni.',
+  role:'Genera la richiesta (HTTP, DNS, ICMP echo…).'},
+ {id:6,lv:'6',name:'6. Presentazione',dev:'OS, SSL libs',pdu:'Dati',icon:'🎨',
+  protos:['TLS','SSL','JPEG','ASCII'],
+  desc:'Traduzione formati, cifratura, compressione.',
+  role:'Rappresentazione dei dati; questa simulazione HTTP non applica TLS.'},
+ {id:5,lv:'5',name:'5. Sessione',dev:'OS',pdu:'Dati',icon:'🤝',
+  protos:['NetBIOS','RPC','PPTP'],
+  desc:'Stabilisce, sincronizza e termina le sessioni.',
+  role:'Nel modello OSI organizza il dialogo tra applicazioni; qui non apre TCP/UDP.'},
+ {id:4,lv:'4',name:'4. Trasporto',dev:'Firewall, OS',pdu:'Segmento/datagramma',icon:'🚚',
+  protos:['TCP','UDP'],
+  desc:'Trasporto end-to-end. TCP offre affidabilità e ordine; UDP è senza connessione. ICMP opera a L3.',
+  role:'Porte e segmentazione TCP; UDP usa datagrammi. TCP gestisce gli ACK.'},
+ {id:3,lv:'3',name:'3. Rete',dev:'Router',pdu:'Pacchetto',icon:'🌐',
+  protos:['IP','ICMP','OSPF','BGP'],
+  desc:'Indirizzamento IP, routing, frammentazione IP, ICMP.',
+  role:'Il Router elabora SOLO fino a qui. Legge IP, TTL, ICMP.'},
+ {id:2,lv:'2',name:'2. Collegamento',dev:'Switch, NIC',pdu:'Frame',icon:'🔗',
+  protos:['Ethernet','Wi-Fi','PPP','ARP'],
+  desc:'MAC, accesso al mezzo, FCS/CRC. ARP appartiene a questo livello.',
+  role:'ARP funziona a questo livello. Crea frame con MAC sorgente/destinazione.'},
+ {id:1,lv:'1',name:'1. Fisico',dev:'Cavi, Hub, Modem',pdu:'Bit',icon:'🔌',
+  protos:['Ethernet rame','Fibra','Wi-Fi RF','DSL'],
+  desc:'Trasmissione bit grezzi sul mezzo fisico.',
+  role:'Il DCE opera qui: rigenera o adatta i segnali sul collegamento.'},
+];
+const TCPIP=[
+ {id:4,lv:'T4',name:'4. Applicazione',dev:'PC, Server',pdu:'Dati',icon:'💻',
+  protos:['HTTP','DNS','FTP','SMTP'],desc:'OSI L5+L6+L7.',role:'Genera la richiesta applicativa.'},
+ {id:3,lv:'T3',name:'3. Trasporto',dev:'OS, Firewall',pdu:'Segmento/datagramma',icon:'🚚',
+  protos:['TCP','UDP'],desc:'TCP/UDP. Porte e ACK.',role:'Segmentazione, porte, ACK.'},
+ {id:2,lv:'T2',name:'2. Internet',dev:'Router',pdu:'Pacchetto',icon:'🌐',
+  protos:['IP','ICMP'],desc:'IP routing, ICMP.',role:'Routing e ICMP.'},
+ {id:1,lv:'T1',name:'1. Accesso Rete',dev:'Switch, NIC',pdu:'Frame/Bit',icon:'🔗',
+  protos:['Ethernet','Wi-Fi','PPP','ARP'],desc:'OSI L1+L2. ARP appartiene a questo livello.',role:'Frame + segnale fisico. ARP risolve IP→MAC qui.'},
+];
+const MODELS={OSI:{layers:OSI,routerLayers:3,dceLayers:1},TCPIP:{layers:TCPIP,routerLayers:2,dceLayers:1}};
+let M=MODELS.OSI;
+
+// ─── STATE ────────────────────────────────────────────
+let sim={running:false,paused:false,hovered:false,res:null,headers:{},content:''};
+let logEntries=[];
+let scenarioName='—';
+
+// ─── TABS ─────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    $('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='quiz') renderQuiz();
+  });
+});
+
+// ─── ZOOM (dimensione testi/riquadri) ──────────────────
+const ZOOM_KEY='netlab_zoom_mult';
+let zoomMult=parseFloat(safeStorage.getItem(ZOOM_KEY))||1;
+function applyZoom(){
+  zoomMult=Math.max(0.8,Math.min(1.5,zoomMult));
+  document.documentElement.style.setProperty('--zoom',zoomMult);
+  try{safeStorage.setItem(ZOOM_KEY,zoomMult);}catch(e){}
+}
+applyZoom();
+$('zoom-in').addEventListener('click',()=>{zoomMult+=0.08;applyZoom();});
+$('zoom-out').addEventListener('click',()=>{zoomMult-=0.08;applyZoom();});
+$('zoom-reset').addEventListener('click',()=>{zoomMult=1;applyZoom();});
+
+// ─── BACK TO TOP ────────────────────────────────────────
+const topBtn=$('top-btn');
+window.addEventListener('scroll',()=>{
+  topBtn.classList.toggle('show',window.scrollY>320);
+});
+topBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+
+// ─── GUIDA "COME SI USA?" ───────────────────────────────
+$('help-btn').addEventListener('click',()=>{
+  $('sci-title').textContent='❓ Come si usa NetLab';
+  $('sci-desc').innerHTML=`<b>Per lo studente:</b> scegli uno scenario in alto (es. "Web (TCP)"), poi osserva
+    il pacchetto muoversi tra i livelli e i nodi. Clicca sui box "❓ cosa fa?" sotto ogni bottone per capire
+    cosa mostra ogni scenario prima di avviarlo. Apri il "📋 Log" (in basso a destra) per leggere passo-passo
+    cosa succede. Usa i pulsanti "⏸ Pausa" e "▶ Step" per rallentare e studiare un singolo passaggio. Alla fine
+    metti alla prova quanto hai capito nel tab "🎯 Quiz".`;
+  $('sci-lv').innerHTML=`<b>Per il docente:</b> il tab "📝 Lavagna Didattica" contiene schede pronte per la
+    spiegazione frontale. Attiva "Simula errore FCS" + "🎯 Modalità Errore Guidato" per una verifica interattiva
+    in classe. Il "📋 Log" può essere esportato in PDF a fine simulazione per relazioni/verifiche. Le pagine
+    "📖 Glossario" e "🗺️ Mappa Concettuale" sono materiale di supporto autonomo, linkabili separatamente.`;
+  $('sci-use').textContent='Suggerimento: rallenta la velocità (slider "⚡ Velocità") la prima volta che mostri uno scenario nuovo alla classe.';
+  scInfoPanel.classList.add('open');
+});
+
+// ─── LOG ──────────────────────────────────────────────
+function log(msg,cls=''){
+  const ts=new Date().toLocaleTimeString('it',{hour12:false});
+  const p=document.createElement('p');
+  p.className=cls; p.textContent=`[${ts}] ${msg}`;
+  logBox.prepend(p); logEntries.unshift({ts,msg,cls});
+  if(!logCol.classList.contains('open')) logNotif.style.display='inline-block';
+}
+function clearLog(){logBox.innerHTML='';logEntries=[];}
+
+$('log-toggle-btn').addEventListener('click',()=>{
+  const o=logCol.classList.toggle('open');
+  document.body.classList.toggle('log-open',o);
+  logNotif.style.display='none';
+  setTimeout(drawDiagram,380);
+});
+$('log-close').addEventListener('click',()=>{
+  logCol.classList.remove('open');
+  document.body.classList.remove('log-open');
+  setTimeout(drawDiagram,380);
+});
+
+// ─── PHASE ────────────────────────────────────────────
+function phase(id){
+  ['ph-arp','ph-dns','ph-syn','ph-enc','ph-net','ph-ack','ph-dec','ph-icmp','ph-frag']
+    .forEach(x=>$(x).classList.remove('active'));
+  if(id) $(id).classList.add('active');
+}
+
+// ─── CONTROLS ─────────────────────────────────────────
+function toggleCtrl(on){
+  [$('btn-web'),$('btn-dns'),$('btn-full'),$('btn-arp'),$('btn-icmp'),$('btn-tr'),$('btn-frag'),modelSel]
+    .forEach(e=>e.disabled=on);
+  btnPause.disabled=!on;
+  if(!on){btnStep.disabled=true;btnPause.textContent='⏸ Pausa';}
+}
+
+// ─── WAIT ─────────────────────────────────────────────
+async function wait(){
+  if(!sim.running) return;
+  if(sim.hovered||sim.paused){
+    await new Promise(r=>{sim.res=r;}); sim.res=null; return;
+  }
+  await new Promise(r=>setTimeout(r,Math.max(30,2450-speed.valueAsNumber)));
+}
+function resolveWait(){if(sim.res){sim.res();sim.res=null;}}
+
+// ─── PACKET ───────────────────────────────────────────
+function setPDU(n){
+  const k=Object.keys(PDU_MAP).find(k=>n.includes(k));
+  pktEl.querySelector('.pp').textContent=k?`[${PDU_MAP[k]}]`:'';
+}
+function setContent(t){
+  sim.content=t;
+  pktEl.querySelector('.pc').textContent=t.length>28?t.slice(0,25)+'…':t;
+}
+function moveTo(el){
+  const wr=simWrap.getBoundingClientRect(),lr=el.getBoundingClientRect();
+  pktEl.style.transform=`translate(-50%,-50%) translate(${lr.left-wr.left+lr.width/2}px,${lr.top-wr.top+lr.height/2}px)`;
+}
+function activate(stackEl,layerEl,cls='active'){
+  stackEl.querySelectorAll('.layer').forEach(e=>e.classList.remove('active','ack-hi','arp-hi','icmp-hi','frag-hi'));
+  layerEl.classList.add(cls);
+}
+function deactivateAll(){
+  document.querySelectorAll('.layer')
+    .forEach(e=>e.classList.remove('active','ack-hi','arp-hi','icmp-hi','frag-hi','final-glow'));
+}
+function visLayers(el){return[...el.querySelectorAll('.layer')].filter(e=>!e.classList.contains('empty-layer'));}
+
+// ─── BUILD STACKS ─────────────────────────────────────
+function buildStack(el,layers,activeCount){
+  const empty=layers.length-activeCount;
+  el.innerHTML='';
+  layers.forEach((l,i)=>{
+    const isEmpty=i<empty;
+    const div=document.createElement('div');
+    div.className='layer'+(isEmpty?' empty-layer':'');
+    if(!isEmpty){
+      const displayName=(el===elDce && M===MODELS.TCPIP)?'Fisico (parte di Accesso Rete)':l.name;
+      div.dataset.layer=l.name; div.dataset.lv=l.lv;
+      div.innerHTML=`<span class="icon">${l.icon}</span>
+        <div class="linfo"><div class="lname">${displayName}</div><div class="ldev">${l.dev}</div></div>
+        <span class="pdu-b">${l.pdu}</span>`;
+      div.addEventListener('click',onLayerClick);
+    }
+    el.appendChild(div);
+  });
+}
+function initialize(){
+  M=MODELS[modelSel.value];
+  const L=M.layers;
+  buildStack(elClient,L,L.length);
+  buildStack(elRtA,L,M.routerLayers);
+  buildStack(elDce,L,M.dceLayers);
+  buildStack(elRtB,L,M.routerLayers);
+  buildStack(elServer,L,L.length);
+  setTimeout(drawDiagram,60);
+  reset();
+}
+
+// ─── DIAGRAM ──────────────────────────────────────────
+function drawDiagram(){
+  const diag=$('net-diag');if(!diag)return;
+  const dR=diag.getBoundingClientRect();
+  const stacks=[elClient,elRtA,elDce,elRtB,elServer];
+  const xs=stacks.map(s=>{const r=s.getBoundingClientRect();return r.left-dR.left+r.width/2;});
+  const Y=20;
+  const setLine=(id,x1,x2)=>{const l=$(id);l.setAttribute('x1',x1);l.setAttribute('x2',x2);l.setAttribute('y1',Y);l.setAttribute('y2',Y);};
+  setLine('nl-lan1',xs[0],xs[1]); setLine('nl-wan1',xs[1],xs[2]);
+  setLine('nl-wan2',xs[2],xs[3]); setLine('nl-lan2',xs[3],xs[4]);
+  [['lbl-c',xs[0]],['lbl-ra',xs[1]],['lbl-dce',xs[2]],['lbl-rb',xs[3]],['lbl-s',xs[4]]]
+    .forEach(([id,x])=>{const e=$(id);if(e)e.style.left=x+'px';});
+}
+function animDot(fi,ti,color='#ffc107'){
+  const diag=$('net-diag'),dot=$('net-dot');if(!diag||!dot)return;
+  const dR=diag.getBoundingClientRect();
+  const stacks=[elClient,elRtA,elDce,elRtB,elServer];
+  const x1=stacks[fi].getBoundingClientRect().left-dR.left+stacks[fi].getBoundingClientRect().width/2;
+  const x2=stacks[ti].getBoundingClientRect().left-dR.left+stacks[ti].getBoundingClientRect().width/2;
+  dot.style.background=color;dot.style.display='block';dot.style.transition='none';dot.style.left=x1+'px';
+  setTimeout(()=>{dot.style.transition=`left ${MOVE}ms linear`;dot.style.left=x2+'px';},30);
+  setTimeout(()=>{dot.style.display='none';},MOVE+100);
+}
+
+// ─── RESET ────────────────────────────────────────────
+function reset(keepLog=false){
+  sim={running:false,paused:false,hovered:false,res:null,headers:{},content:''};
+  deactivateAll(); pktEl.style.opacity='0'; pktEl.className='';
+  pktEl.querySelector('.pc').textContent='Dati';
+  pktEl.querySelector('.pp').textContent='';
+  $('net-dot').style.display='none';
+  if(!keepLog)clearLog(); phase(null); toggleCtrl(false);
+}
+
+// ─── LAYER INFO ───────────────────────────────────────
+function onLayerClick(e){
+  const ld=M.layers.find(l=>l.name===e.currentTarget.dataset.layer);if(!ld)return;
+  $('ip-title').textContent=ld.name;$('ip-desc').textContent=ld.desc;
+  $('ip-dev').textContent=ld.dev;$('ip-pdu').textContent='PDU: '+ld.pdu;
+  $('ip-role').textContent=ld.role;
+  $('ip-protos').innerHTML=(ld.protos||[]).map(p=>`<span class="chip">${p}</span>`).join('');
+  infoPanel.classList.add('open');
+}
+
+// ─── INSPECTOR ────────────────────────────────────────
+function showInspector(){
+  let t=`PDU ATTUALE:\n  "${sim.content}"\n\n`;
+  const keys=Object.keys(sim.headers).sort((a,b)=>(parseInt(b)||99)-(parseInt(a)||99));
+  for(const k of keys){t+=`── ${k} ──\n`;for(const [hk,hv] of Object.entries(sim.headers[k]))t+=`   ${hk}: ${hv}\n`;}
+  $('insp-content').textContent=t||'Nessun header.';inspPanel.classList.add('open');
+}
+
+// ─── STRIP HDR ────────────────────────────────────────
+function stripHdr(content,idx,sc){
+  const lname=M.layers[idx].name;let c=content;
+  if(sim.headers[lname]){
+    const h=Object.values(sim.headers[lname])[0]||'';
+    const t=sc.trailers[idx]||'';
+    if(h&&c.startsWith(h))c=c.slice(h.length);
+    if(t&&c.endsWith(t))c=c.slice(0,-t.length);
+    delete sim.headers[lname];
+  }
+  return c;
+}
+
+function decrementPacketTTL(content, networkName, routerName){
+  const match=content.match(/TTL:(\d+)/);
+  if(!match)return content;
+  const before=Number(match[1]),after=before-1;
+  const updated=content.replace(/TTL:\d+/,`TTL:${after}`);
+  if(sim.headers[networkName]){
+    for(const key of Object.keys(sim.headers[networkName]))
+      sim.headers[networkName][key]=sim.headers[networkName][key].replace(/TTL:\d+/,`TTL:${after}`);
+  }
+  const netLbl=networkName||'Rete';
+  log(`🔀 ${routerName} [${netLbl}]: TTL=${before}→${after}`,'warn');
+  return updated;
+}
+
+// ══════════════════════════════════════════════════════
+// CORE FLOW (same as v4)
+// ══════════════════════════════════════════════════════
+async function runFlow(sc,isResp=false){
+  sim.headers={};
+  const fromEl=isResp?elServer:elClient,toEl=isResp?elClient:elServer;
+  const rt1El=isResp?elRtB:elRtA,rt2El=isResp?elRtA:elRtB;
+  let content=sc.initialData;
+  setContent(content); pktEl.className=sc.cls||'';
+  const fromVis=visLayers(fromEl),toVis=visLayers(toEl),
+        rt1Vis=visLayers(rt1El).reverse(),dceVis=visLayers(elDce).reverse(),
+        rt2Vis=visLayers(rt2El).reverse();
+  const dlName=M.layers.find(l=>l.name.includes('Collegamento')||l.name.includes('Accesso'))?.name||'';
+  const phyName=M.layers.find(l=>l.name.includes('Fisico'))?.name||M.layers.at(-1).name;
+  const networkName=M.layers.find(l=>l.name.includes('Rete')||l.name.includes('Internet'))?.name||'';
+
+  moveTo(fromVis[0]);await new Promise(r=>setTimeout(r,80));pktEl.style.opacity='1';
+
+  // ENCAP
+  phase('ph-enc');
+  for(let i=0;i<fromVis.length;i++){
+    if(!sim.running)return false;
+    const le=fromVis[i],ln=M.layers[i].name;
+    activate(fromEl,le);moveTo(le);setPDU(ln);
+    log(`${isResp?'🖥 Server':'💻 Client'} [${ln}]: ${isResp&&ln===dlName?'Frame Ethernet: src=Server dst=Router-B, FCS':isResp&&ln===networkName?'IP hdr: src 10.0.0.20 dst 192.168.1.10 TTL=64':sc.encLogs[i]}`);
+    await new Promise(r=>setTimeout(r,MOVE));
+    let hd=sc.headers[i];
+    if(isResp && ln===dlName)hd={'MAC':'[ETH src:Server dst:Rt-B]|'};
+    if(isResp && ln===networkName)hd={'IP':'[IP src:10.0.0.20 dst:192.168.1.10 TTL:64]|'};
+    if(hd&&Object.keys(hd).length){content=Object.values(hd)[0]+content+(sc.trailers[i]||'');sim.headers[ln]=hd;}
+    setContent(content);await wait();le.classList.remove('active');
+  }
+
+  // Client→Rt1
+  phase('ph-net');
+  log(`📡 [LAN] ${isResp?'Server':'Client'} → ${isResp?'Router-B':'Router-A'}`, 'info');
+  fromVis.at(-1).classList.add('active');
+  animDot(isResp?4:0,isResp?3:1,'#ffc107');
+  moveTo(rt1Vis[0]);await new Promise(r=>setTimeout(r,MOVE));fromVis.at(-1).classList.remove('active');
+
+  // Rt1 decap
+  for(let i=0;i<rt1Vis.length;i++){
+    if(!sim.running)return false;
+    const le=rt1Vis[i],ln=le.dataset.layer;
+    activate(rt1El,le);moveTo(le);setPDU(ln);
+    await new Promise(r=>setTimeout(r,MOVE));
+    if(ln===phyName && ln!==dlName) log(`🔀 ${isResp?'Router-B':'Router-A'} [${ln}]: ricezione bit`);
+    else if(ln===dlName){
+      if(errChk.checked&&!isResp){pktEl.classList.add('corrupted');log('⛔ ERRORE FCS — frame scartato!','error');await new Promise(r=>setTimeout(r,1200));return false;}
+      if(sim.headers[dlName]){const hs=Object.values(sim.headers[dlName])[0]||'';const ti=M.layers.findIndex(l=>l.name===dlName);const tr=sc.trailers[ti]||'';if(hs&&content.startsWith(hs))content=content.slice(hs.length);if(tr&&content.endsWith(tr))content=content.slice(0,-tr.length);delete sim.headers[dlName];}
+      log(`🔀 ${isResp?'Router-B':'Router-A'} [${ln}]: FCS OK, MAC rimosso`);
+    } else content=decrementPacketTTL(content,networkName,isResp?'Router-B':'Router-A');
+    setContent(content);await wait();if(i<rt1Vis.length-1)le.classList.remove('active');
+  }
+  // Rt1 re-encap
+  log(`🔀 ${isResp?'Router-B':'Router-A'}: nuovo frame per il collegamento seriale → ${isResp?'Router-A':'Router-B'} (DCE trasmette il segnale)`,'warn');
+  for(let i=rt1Vis.length-2;i>=0;i--){
+    if(!sim.running)return false;
+    const le=rt1Vis[i],ln=le.dataset.layer;
+    activate(rt1El,le);moveTo(le);setPDU(ln);
+    if(ln===dlName){const nH={'WAN':`[WAN seriale→${isResp?'Router-A':'Router-B'}]|`};const ti=M.layers.findIndex(l=>l.name===dlName);content=Object.values(nH)[0]+content+(sc.trailers[ti]||'');sim.headers[dlName]=nH;log(`🔀 [${ln}]: nuovo frame seriale verso ${isResp?'Router-A':'Router-B'}`);}
+    setContent(content);await new Promise(r=>setTimeout(r,MOVE));await wait();le.classList.remove('active');
+  }
+  rt1Vis.at(-1).classList.remove('active');
+
+  // Rt1→DCE
+  log(`📡 [WAN] ${isResp?'Router-B':'Router-A'} → DCE`,'info');
+  rt1Vis[0].classList.add('active');
+  animDot(isResp?3:1,2,'#9c27b0');
+  moveTo(dceVis[0]);await new Promise(r=>setTimeout(r,MOVE));rt1Vis[0].classList.remove('active');
+
+  // DCE L1 only
+  for(const le of dceVis){
+    if(!sim.running)return false;
+    activate(elDce,le);moveTo(le);setPDU(le.dataset.layer);
+    log(`📟 DCE [${phyName}]: rigenerazione/adattamento del segnale`,'dce');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();le.classList.remove('active');
+  }
+
+  // DCE→Rt2
+  log(`📡 [WAN] DCE → ${isResp?'Router-A':'Router-B'}`,'info');
+  dceVis[0].classList.add('active');
+  animDot(2,isResp?1:3,'#9c27b0');
+  moveTo(rt2Vis[0]);await new Promise(r=>setTimeout(r,MOVE));dceVis[0].classList.remove('active');
+
+  // Rt2 decap+re-encap
+  for(let i=0;i<rt2Vis.length;i++){
+    if(!sim.running)return false;
+    const le=rt2Vis[i],ln=le.dataset.layer;
+    activate(rt2El,le);moveTo(le);setPDU(ln);
+    await new Promise(r=>setTimeout(r,MOVE));
+    if(ln===phyName && ln!==dlName) log(`🔀 ${isResp?'Router-A':'Router-B'} [${ln}]: ricezione dal DCE`);
+    else if(ln===dlName){if(sim.headers[dlName]){const hs=Object.values(sim.headers[dlName])[0]||'';const ti=M.layers.findIndex(l=>l.name===dlName);const tr=sc.trailers[ti]||'';if(hs&&content.startsWith(hs))content=content.slice(hs.length);if(tr&&content.endsWith(tr))content=content.slice(0,-tr.length);delete sim.headers[dlName];}log(`🔀 [${ln}]: frame seriale rimosso`);}
+    else {content=decrementPacketTTL(content,networkName,isResp?'Router-A':'Router-B');log(`🔀 ${isResp?'Router-A':'Router-B'} [${ln}]: IP dst=${isResp?'Client':'Server'}, LAN`,'warn');}
+    setContent(content);await wait();if(i<rt2Vis.length-1)le.classList.remove('active');
+  }
+  log(`🔀 ${isResp?'Router-A':'Router-B'}: nuovo frame LAN → ${isResp?'Client':'Server'}`,'warn');
+  for(let i=rt2Vis.length-2;i>=0;i--){
+    if(!sim.running)return false;
+    const le=rt2Vis[i],ln=le.dataset.layer;
+    activate(rt2El,le);moveTo(le);setPDU(ln);
+    if(ln===dlName){const nH={'M':`[ETH→${isResp?'Client':'Server'}]|`};const ti=M.layers.findIndex(l=>l.name===dlName);content=Object.values(nH)[0]+content+(sc.trailers[ti]||'');sim.headers[dlName]=nH;log(`🔀 [${ln}]: nuovo frame ETH→${isResp?'Client':'Server'}`);}
+    setContent(content);await new Promise(r=>setTimeout(r,MOVE));await wait();le.classList.remove('active');
+  }
+  rt2Vis.at(-1).classList.remove('active');
+
+  // Rt2→Receiver
+  log(`📡 [LAN] ${isResp?'Router-A':'Router-B'} → ${isResp?'Client':'Server'}`,'info');
+  rt2Vis[0].classList.add('active');
+  animDot(isResp?1:3,isResp?0:4,'#ffc107');
+  moveTo(toVis.at(-1));await new Promise(r=>setTimeout(r,MOVE));rt2Vis[0].classList.remove('active');
+
+  // DECAP
+  phase('ph-dec');
+  for(let i=fromVis.length-1;i>=0;i--){
+    if(!sim.running)return false;
+    const le=toVis[i],ln=M.layers[i].name;
+    activate(toEl,le);moveTo(le);setPDU(ln);
+    log(`${isResp?'💻 Client':'🖥 Server'} [${ln}]: ${sc.decLogs[i]}`);
+    await new Promise(r=>setTimeout(r,MOVE));
+    content=stripHdr(content,i,sc);setContent(content);
+    await wait();if(i!==0)le.classList.remove('active');
+  }
+  return true;
+}
+
+// ─── ACK (realistic, all layers) ──────────────────────
+async function runAck(sc,forResponse=false){
+  if(!sim.running)return;
+  phase('ph-ack');
+  const from=forResponse?elClient:elServer,to=forResponse?elServer:elClient;
+  const first=forResponse?elRtA:elRtB,second=forResponse?elRtB:elRtA;
+  const fromName=forResponse?'Client':'Server',toName=forResponse?'Server':'Client';
+  const firstName=forResponse?'Router-A':'Router-B',secondName=forResponse?'Router-B':'Router-A';
+  const indices=forResponse?[0,1,2,3,4]:[4,3,2,1,0];
+  const tIdx=M.layers.findIndex(l=>l.name.includes('Trasporto'));
+  if(tIdx<0)return;
+  log(`↩ TCP ACK: percorso completo ${fromName}→${toName}`,'ack');
+  sim.headers={};setContent('[TCP ACK]');pktEl.classList.add('ackpkt');pktEl.style.opacity='1';
+  const sender=visLayers(from),receiver=visLayers(to);
+  const firstLevels=visLayers(first).reverse(),secondLevels=visLayers(second).reverse();
+  const dceLevels=visLayers(elDce).reverse();
+  const visit=async(stack,layer,label)=>{
+    if(!sim.running)return false;
+    activate(stack,layer,'ack-hi');moveTo(layer);setPDU(layer.dataset.layer||'Trasporto');
+    log(label,'ack');await new Promise(r=>setTimeout(r,MOVE));await wait();
+    layer.classList.remove('ack-hi');return sim.running;
+  };
+  try{
+    for(let i=tIdx;i<sender.length;i++)
+      if(!await visit(from,sender[i],`${fromName} [${M.layers[i].name}]: ${i===tIdx?'genera ACK':'inoltra ACK al livello inferiore'}`))return;
+    animDot(indices[0],indices[1],'#f06292');
+    for(const le of firstLevels)
+      if(!await visit(first,le,`${firstName} [${le.dataset.layer}]: ${le===firstLevels.at(-1)?'legge IP e sceglie il prossimo router':'riceve e controlla il frame'}`))return;
+    for(let i=firstLevels.length-2;i>=0;i--)
+      if(!await visit(first,firstLevels[i],`${firstName}: prepara un nuovo frame per il collegamento successivo`))return;
+    animDot(indices[1],indices[2],'#9c27b0');
+    for(const le of dceLevels)
+      if(!await visit(elDce,le,`DCE [${le.dataset.layer}]: rigenera il segnale ACK`))return;
+    animDot(indices[2],indices[3],'#9c27b0');
+    for(const le of secondLevels)
+      if(!await visit(second,le,`${secondName} [${le.dataset.layer}]: ${le===secondLevels.at(-1)?'legge IP e instrada verso il destinatario':'riceve e controlla il frame'}`))return;
+    for(let i=secondLevels.length-2;i>=0;i--)
+      if(!await visit(second,secondLevels[i],`${secondName}: prepara un nuovo frame LAN`))return;
+    animDot(indices[3],indices[4],'#f06292');
+    for(let i=receiver.length-1;i>=tIdx;i--)
+      if(!await visit(to,receiver[i],`${toName} [${M.layers[i].name}]: ${i===tIdx?'✅ ACK ricevuto':'elabora ACK al livello locale'}`))return;
+    log('✅ ACK completato!','success');
+  }finally{pktEl.style.opacity='0';pktEl.classList.remove('ackpkt');}
+}
+
+// ─── TCP HANDSHAKE ────────────────────────────────────
+async function runHandshake(){
+  phase('ph-syn');log('── TCP 3-Way Handshake ──','info');
+  const ti=M.layers.findIndex(l=>l.name.includes('Trasporto'));if(ti<0)return;
+  const cL4=visLayers(elClient)[ti],sL4=visLayers(elServer)[ti];
+  pktEl.classList.add('ctrl');pktEl.querySelector('.pp').textContent='';
+  const steps=[
+    {from:cL4,to:sL4,fi:0,ti:4,txt:'[SYN]',msg:'Client→Server: SYN'},
+    {from:sL4,to:cL4,fi:4,ti:0,txt:'[SYN-ACK]',msg:'Server→Client: SYN-ACK'},
+    {from:cL4,to:sL4,fi:0,ti:4,txt:'[ACK]',msg:'Client→Server: ACK → connesso!'},
+  ];
+  for(const s of steps){
+    if(!sim.running)return;
+    moveTo(s.from);pktEl.querySelector('.pc').textContent=s.txt;pktEl.style.opacity='1';
+    await wait();animDot(s.fi,s.ti,'#6610f2');moveTo(s.to);log(s.msg,'info');
+    await new Promise(r=>setTimeout(r,MOVE));
+  }
+  log('✅ TCP stabilito!','success');pktEl.style.opacity='0';pktEl.classList.remove('ctrl');
+}
+
+// ══════════════════════════════════════════════════════
+// SCENARIO: ARP — Address Resolution Protocol
+// ARP resolves IP→MAC BEFORE sending any IP packet.
+// It operates at L2 (Accesso Rete), resolving an L3 IP address into an L2 MAC address.
+// ══════════════════════════════════════════════════════
+async function runARP(stopAtEnd=true){
+  if(stopAtEnd){reset();sim.running=true;toggleCtrl(true);clearLog();
+    scenarioName='ARP — Risoluzione IP→MAC';logBadge.textContent='Scenario: ARP';}
+  log('🔎 === ARP: Address Resolution Protocol ===','arp');
+  log('Situazione: Client vuole inviare un pacchetto a Router-A ma non conosce il suo MAC','info');
+  try{
+    const cliVis=visLayers(elClient);
+    const rtAVis=visLayers(elRtA).reverse();
+    const dlIdx=M.layers.findIndex(l=>l.name.includes('Collegamento')||l.name.includes('Accesso'));
+    const netIdx=M.layers.findIndex(l=>l.name.includes('Rete')||l.name.includes('Internet'));
+    const dlName=dlIdx>=0?M.layers[dlIdx].name:'Collegamento';
+    const netName=netIdx>=0?M.layers[netIdx].name:'Rete';
+    const phyName=M.layers.at(-1).name;
+    log(`ARP opera al livello ${dlName}: mette in relazione IP e MAC tramite broadcast Ethernet a FF:FF:FF:FF:FF:FF`,'arp');
+
+    // Step 1: Client L3 needs MAC for Router-A IP
+    phase('ph-arp');
+    pktEl.className='arppkt';pktEl.querySelector('.pp').textContent='[ARP]';
+
+    log(`💻 Client [${netName}]: devo inviare a 192.168.1.1 (Router-A) — MAC sconosciuto!`,'arp');
+    if(netIdx>=0){activate(elClient,cliVis[netIdx],'arp-hi');moveTo(cliVis[netIdx]);}
+    pktEl.style.opacity='1';setContent('ARP: chi ha 192.168.1.1?');
+    await wait();if(netIdx>=0)cliVis[netIdx].classList.remove('arp-hi');
+
+    // Step 2: Client builds ARP Request at L2
+    log(`💻 Client [${dlName}]: costruisce ARP Request — broadcast FF:FF:FF:FF:FF:FF`,'arp');
+    if(dlIdx>=0){activate(elClient,cliVis[dlIdx],'arp-hi');moveTo(cliVis[dlIdx]);}
+    setContent('[ARP REQ] who-has 192.168.1.1?');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    if(dlIdx>=0)cliVis[dlIdx].classList.remove('arp-hi');
+
+    // Step 3: ARP Request at L1 → broadcast LAN
+    log(`💻 Client [${phyName}]: trasmette ARP Request in broadcast sul segmento LAN`,'arp');
+    if(cliVis.length>0){activate(elClient,cliVis.at(-1),'arp-hi');moveTo(cliVis.at(-1));}
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    cliVis.at(-1).classList.remove('arp-hi');
+
+    // ARP broadcast travels to Router-A (and every LAN node)
+    log('📡 [LAN BROADCAST] ARP Request → tutti i nodi del segmento','arp');
+    animDot(0,1,'#6a1b9a');moveTo(rtAVis[0]);
+    await new Promise(r=>setTimeout(r,MOVE));
+
+    // Step 4: Router-A receives at L1, L2 recognizes its IP
+    log(`🔀 Router-A [${phyName}]: riceve il frame broadcast`,'arp');
+    activate(elRtA,rtAVis[0],'arp-hi');moveTo(rtAVis[0]);
+    await new Promise(r=>setTimeout(r,MOVE));await wait();rtAVis[0].classList.remove('arp-hi');
+
+    if(rtAVis.length>1){
+      log(`🔀 Router-A [${dlName}]: legge ARP Request — IP richiesto = 192.168.1.1 = ME!`,'arp');
+      activate(elRtA,rtAVis[dlIdx===M.layers.length-1?0:1],'arp-hi');moveTo(rtAVis[dlIdx===M.layers.length-1?0:1]);
+      setContent('[ARP REQ] who-has 192.168.1.1?');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();rtAVis[dlIdx===M.layers.length-1?0:1].classList.remove('arp-hi');
+    }
+    log('🔀 Router-A [ARP]: l\'indirizzo richiesto corrisponde alla propria interfaccia; prepara ARP Reply al livello di collegamento','arp');
+
+    // Step 5: Router-A sends ARP Reply (unicast) back to Client
+    log(`🔀 Router-A [${dlName}]: costruisce ARP Reply — src MAC: AA:BB:CC:DD:EE:01 → Client`,'arp');
+    if(rtAVis.length>1){activate(elRtA,rtAVis[dlIdx===M.layers.length-1?0:1],'arp-hi');moveTo(rtAVis[dlIdx===M.layers.length-1?0:1]);}
+    setContent('[ARP REPLY] 192.168.1.1 is-at AA:BB:CC:DD:EE:01');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    if(rtAVis.length>1)rtAVis[dlIdx===M.layers.length-1?0:1].classList.remove('arp-hi');
+
+    log(`🔀 Router-A [${phyName}]: trasmette ARP Reply (unicast) → Client`,'arp');
+    activate(elRtA,rtAVis[0],'arp-hi');moveTo(rtAVis[0]);
+    await new Promise(r=>setTimeout(r,MOVE));await wait();rtAVis[0].classList.remove('arp-hi');
+
+    animDot(1,0,'#6a1b9a');moveTo(cliVis.at(-1));
+    await new Promise(r=>setTimeout(r,MOVE));
+
+    // Step 6: Client receives ARP Reply, updates ARP cache
+    log(`💻 Client [${phyName}]: riceve ARP Reply`,'arp');
+    activate(elClient,cliVis.at(-1),'arp-hi');moveTo(cliVis.at(-1));
+    await new Promise(r=>setTimeout(r,MOVE));await wait();cliVis.at(-1).classList.remove('arp-hi');
+
+    if(dlIdx>=0){
+      log(`💻 Client [${dlName}]: legge MAC di Router-A = AA:BB:CC:DD:EE:01`,'arp');
+      activate(elClient,cliVis[dlIdx],'arp-hi');moveTo(cliVis[dlIdx]);
+      setContent('[ARP REPLY] 192.168.1.1→AA:BB:CC:DD:EE:01');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();cliVis[dlIdx].classList.remove('arp-hi');
+    }
+    if(netIdx>=0){
+      log('💻 Client [ARP]: cache ARP aggiornata — 192.168.1.1 → AA:BB:CC:DD:EE:01','arp');
+      log(`💻 Client [${dlName}]: ora posso costruire il frame Ethernet con il MAC corretto! ✅`,'success');
+      activate(elClient,cliVis[netIdx],'arp-hi');moveTo(cliVis[netIdx]);
+      await new Promise(r=>setTimeout(r,MOVE));await wait();cliVis[netIdx].classList.remove('arp-hi');
+    }
+
+    elClient.children[0]?.classList.add('final-glow');
+    notifyDelivery('✅ ARP completato: MAC risolto!');
+    log('✅ ARP completato! MAC risolto. Il Client può ora inviare pacchetti IP a Router-A.','success');
+    log('ℹ️  Nota: ARP è locale al segmento LAN. Per raggiungere server remoti,','info');
+    log('    il Client risolve solo il MAC del gateway (Router-A), non quello del Server finale.','info');
+  }catch(e){log('⛔ Errore: '+e.message,'error');console.error(e);}
+  finally{
+
+  if(stopAtEnd){
+    sim.running=false;
+    toggleCtrl(false);
+  }
+
+  pktEl.style.opacity='0';
+
+}
+}
+
+// ══════════════════════════════════════════════════════
+// SCENARIO: ICMP PING
+// ICMP Echo Request + Reply, passes through routers
+// ══════════════════════════════════════════════════════
+async function runICMP(mode='ping'){
+  reset();sim.running=true;toggleCtrl(true);clearLog();
+  scenarioName=mode==='traceroute'?'Traceroute (ICMP TTL)':'ICMP Ping';
+  logBadge.textContent='Scenario: '+scenarioName;
+  const isTrace=mode==='traceroute';
+  const netIdx=M.layers.findIndex(l=>l.name.includes('Rete')||l.name.includes('Internet'));
+  const dlIdx=M.layers.findIndex(l=>l.name.includes('Collegamento')||l.name.includes('Accesso'));
+  const phyIdx=M.layers.length-1;
+  const netName=netIdx>=0?M.layers[netIdx].name:'Rete';
+  const dlName=dlIdx>=0?M.layers[dlIdx].name:'Collegamento';
+  const phyName=M.layers[phyIdx].name;
+  log(`📶 === ${scenarioName} ===`,'icmp');
+  if(isTrace) log('Traceroute: invia pacchetti con TTL crescente (1,2,3…) — ogni router risponde con ICMP Time Exceeded','info');
+  else        log(`ICMP Ping: Echo Request → Server, Echo Reply ← Server — usa ${netName} (niente TCP/UDP)`,'info');
+
+  try{
+    const cliVis=visLayers(elClient);
+    const rtAVis=visLayers(elRtA).reverse();
+    const dceVis=visLayers(elDce).reverse();
+    const rtBVis=visLayers(elRtB).reverse();
+    const srvVis=visLayers(elServer);
+
+    const ttlValues=isTrace?[1,2,3]:[64];
+    for(const ttl of ttlValues){
+      let currentTTL=ttl;
+      if(!sim.running)break;
+      phase('ph-icmp');
+      pktEl.className='icmppkt';
+      log(`\n📶 ICMP ${isTrace?`TTL=${ttl} (hop ${ttl})`:'Echo Request — TTL=64'}`,'icmp');
+
+      // Client builds ICMP packet (L3, no transport header)
+      setContent(`[ICMP Echo Req TTL:${ttl}]`);pktEl.style.opacity='1';
+
+      log(`💻 Client [${netName}]: costruisce pacchetto ICMP Echo Request (NO livello Trasporto!)`,'icmp');
+      log('   ICMP è incapsulato direttamente in IP — usa Protocol ID=1','icmp');
+      if(netIdx>=0){activate(elClient,cliVis[netIdx],'icmp-hi');moveTo(cliVis[netIdx]);}
+      await new Promise(r=>setTimeout(r,MOVE));await wait();
+      if(netIdx>=0)cliVis[netIdx].classList.remove('icmp-hi');
+
+      // L2 frame
+      if(dlIdx>=0){activate(elClient,cliVis[dlIdx],'icmp-hi');moveTo(cliVis[dlIdx]);}
+      log(`💻 Client [${dlName}]: frame Ethernet → dst: Router-A MAC`,'icmp');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();
+      if(dlIdx>=0)cliVis[dlIdx].classList.remove('icmp-hi');
+
+      // L1 → Router-A
+      activate(elClient,cliVis.at(-1),'icmp-hi');moveTo(cliVis.at(-1));
+      await new Promise(r=>setTimeout(r,MOVE));cliVis.at(-1).classList.remove('icmp-hi');
+      animDot(0,1,'#00838f');moveTo(rtAVis[0]);await new Promise(r=>setTimeout(r,MOVE));
+
+      // Router-A
+      for(let i=0;i<rtAVis.length;i++){
+        if(!sim.running)break;
+        activate(elRtA,rtAVis[i],'icmp-hi');moveTo(rtAVis[i]);
+        const ln=rtAVis[i].dataset.layer;
+        await new Promise(r=>setTimeout(r,MOVE));
+        if(ln.includes('Fisico'))     log(`🔀 Router-A [${phyName}]: ricezione`,'icmp');
+        else if(ln.includes('Colleg')||ln.includes('Accesso')) log(`🔀 Router-A [${dlName}]: MAC ok, rimuove ETH`,'icmp');
+        else{
+          if(isTrace&&ttl===1){
+            log(`🔀 Router-A [${netName}]: TTL=1 → TTL diventa 0! Scarta pacchetto + invia ICMP Time Exceeded`,'warn');
+            log('   Router-A invia ICMP Time Exceeded a Client (src: 192.168.1.1)','icmp');
+            await wait();rtAVis[i].classList.remove('icmp-hi');
+            // Router sends ICMP Time Exceeded back to client
+            pktEl.className='icmppkt';setContent('[ICMP Time Exceeded src:Rt-A]');
+            activate(elRtA,rtAVis[Math.min(i,rtAVis.length-1)],'icmp-hi');
+            animDot(1,0,'#00838f');moveTo(cliVis[netIdx>=0?netIdx:0]);
+            await new Promise(r=>setTimeout(r,MOVE));rtAVis[Math.min(i,rtAVis.length-1)].classList.remove('icmp-hi');
+            log('💻 Client: riceve ICMP Time Exceeded da 192.168.1.1 (Router-A) — HOP 1 identificato!','success');
+            await wait();break;
+          } else {
+            currentTTL--;setContent(`[ICMP Echo Req TTL:${currentTTL}]`);log(`🔀 Router-A [${netName}]: TTL=${ttl}→${currentTTL}, next-hop: Router-B (via DCE)`,'icmp');
+          }
+        }
+        await wait();rtAVis[i].classList.remove('icmp-hi');
+      }
+      if(isTrace&&ttl===1) continue;
+
+      // Rt-A re-encap + DCE + Rt-B + Server
+      for(let i=rtAVis.length-2;i>=0;i--){activate(elRtA,rtAVis[i],'icmp-hi');moveTo(rtAVis[i]);await new Promise(r=>setTimeout(r,MOVE*0.7));rtAVis[i].classList.remove('icmp-hi');}
+      rtAVis.at(-1).classList.remove('icmp-hi');
+      animDot(1,2,'#9c27b0');moveTo(dceVis[0]);await new Promise(r=>setTimeout(r,MOVE));
+      for(const le of dceVis){activate(elDce,le,'icmp-hi');moveTo(le);log(`📟 DCE [${phyName}]: rigenerazione segnale ICMP`,'dce');await new Promise(r=>setTimeout(r,MOVE));await wait();le.classList.remove('icmp-hi');}
+      animDot(2,3,'#9c27b0');moveTo(rtBVis[0]);await new Promise(r=>setTimeout(r,MOVE));
+
+      // Router-B
+      for(let i=0;i<rtBVis.length;i++){
+        if(!sim.running)break;
+        activate(elRtB,rtBVis[i],'icmp-hi');moveTo(rtBVis[i]);
+        const ln=rtBVis[i].dataset.layer;
+        await new Promise(r=>setTimeout(r,MOVE));
+        if(ln.includes('Fisico'))     log(`🔀 Router-B [${phyName}]: ricezione ICMP`,'icmp');
+        else if(ln.includes('Colleg')||ln.includes('Accesso')) log(`🔀 Router-B [${dlName}]: MAC ok`,'icmp');
+        else{
+          if(isTrace&&ttl===2){
+            log(`🔀 Router-B [${netName}]: TTL=${currentTTL}→0! ICMP Time Exceeded → Client`,'warn');
+            await wait();rtBVis[i].classList.remove('icmp-hi');
+            pktEl.className='icmppkt';setContent('[ICMP Time Exceeded src:Rt-B]');
+            animDot(3,0,'#00838f');
+            await new Promise(r=>setTimeout(r,MOVE));
+            log('💻 Client: HOP 2 identificato = Router-B (10.0.0.1)','success');
+            await wait();break;
+          } else {const before=currentTTL;currentTTL--;setContent(`[ICMP Echo Req TTL:${currentTTL}]`);log(`🔀 Router-B [${netName}]: TTL=${before}→${currentTTL}, dst=Server`,'icmp');}
+        }
+        await wait();rtBVis[i].classList.remove('icmp-hi');
+      }
+      if(isTrace&&ttl===2) continue;
+
+      // Server
+      for(let i=rtBVis.length-2;i>=0;i--){activate(elRtB,rtBVis[i],'icmp-hi');moveTo(rtBVis[i]);await new Promise(r=>setTimeout(r,MOVE*0.7));rtBVis[i].classList.remove('icmp-hi');}
+      animDot(3,4,'#00838f');moveTo(srvVis.at(-1));await new Promise(r=>setTimeout(r,MOVE));
+
+      for(let i=srvVis.length-1;i>=netIdx&&i>=0;i--){
+        if(!sim.running)break;
+        activate(elServer,srvVis[i],'icmp-hi');moveTo(srvVis[i]);
+        const ln=M.layers[i].name;
+        if(ln.includes('Rete')||ln.includes('Internet'))
+          log(`🖥 Server [${netName}]: riceve ICMP Echo Request, prepara Echo Reply`,'icmp');
+        await new Promise(r=>setTimeout(r,MOVE));await wait();srvVis[i].classList.remove('icmp-hi');
+      }
+
+      // Echo Reply
+      log(`🖥 Server [${netName}]: invia ICMP Echo Reply (src:10.0.0.20, dst:192.168.1.10)`,'icmp');
+      pktEl.className='icmppkt';setContent('[ICMP Echo Reply TTL:64]');
+      animDot(4,0,'#00838f');
+      await new Promise(r=>setTimeout(r,MOVE));
+
+      if(!isTrace){
+        log(`💻 Client [${netName}]: riceve Echo Reply! RTT calcolato`,'icmp');
+        if(netIdx>=0){activate(elClient,cliVis[netIdx],'icmp-hi');moveTo(cliVis[netIdx]);await new Promise(r=>setTimeout(r,MOVE));await wait();cliVis[netIdx].classList.remove('icmp-hi');}
+        log('✅ Ping riuscito! Host 10.0.0.20 raggiungibile','success');
+      } else if(ttl===3){
+        log('💻 Client: HOP 3 = Server 10.0.0.20 — TRACEROUTE COMPLETATO!','success');
+        log('Riepilogo: Client→Router-A(192.168.1.1)→Router-B(10.0.0.1)→Server(10.0.0.20)','success');
+      }
+      await wait();
+    }
+    elClient.children[0]?.classList.add('final-glow');
+    notifyDelivery('📶 Risposta ricevuta dal Client!');
+  }catch(e){log('⛔ Errore: '+e.message,'error');console.error(e);}
+  finally{sim.running=false;toggleCtrl(false);pktEl.style.opacity='0';}
+}
+
+// ══════════════════════════════════════════════════════
+// SCENARIO: IP FRAGMENTATION
+// Large packet → fragmented by Router-A → reassembled by Server
+// ══════════════════════════════════════════════════════
+async function runFragmentation(){
+  reset();sim.running=true;toggleCtrl(true);clearLog();
+  scenarioName='Frammentazione IP';
+  logBadge.textContent='Scenario: Frammentazione IP';
+  log('✂ === Frammentazione IP (RFC 791) ===','frag');
+  log('Situazione: pacchetto IP grande (3000 byte) attraversa link WAN con MTU=1500 byte','info');
+  log('Router-A deve frammentare il pacchetto in 3 frammenti prima di inviarlo al DCE','warn');
+  try{
+    phase('ph-frag');
+    const cliVis=visLayers(elClient),rtAVis=visLayers(elRtA).reverse(),
+          dceVis=visLayers(elDce).reverse(),rtBVis=visLayers(elRtB).reverse(),
+          srvVis=visLayers(elServer);
+    const netIdx=M.layers.findIndex(l=>l.name.includes('Rete')||l.name.includes('Internet'));
+    const dlIdx=M.layers.findIndex(l=>l.name.includes('Collegamento')||l.name.includes('Accesso'));
+    const netName=netIdx>=0?M.layers[netIdx].name:'Rete';
+    const dlName=dlIdx>=0?M.layers[dlIdx].name:'Collegamento';
+    const phyName=M.layers.at(-1).name;
+
+    // CLIENT: builds large packet
+    pktEl.className='fragpkt';setContent('[IP: 3000 byte, DF=0]');pktEl.style.opacity='1';
+    log(`💻 Client [${netName}]: costruisce pacchetto IP da 3000 byte (DF=0: frammentazione permessa)`,'frag');
+    if(netIdx>=0){activate(elClient,cliVis[netIdx],'frag-hi');moveTo(cliVis[netIdx]);}
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    if(netIdx>=0)cliVis[netIdx].classList.remove('frag-hi');
+
+    if(dlIdx>=0){
+      log(`💻 Client [${dlName}]: frame Ethernet (payload=3000B, MTU locale=9000 jumbo) — ok`,'frag');
+      activate(elClient,cliVis[dlIdx],'frag-hi');moveTo(cliVis[dlIdx]);
+      await new Promise(r=>setTimeout(r,MOVE));await wait();cliVis[dlIdx].classList.remove('frag-hi');
+    }
+    activate(elClient,cliVis.at(-1),'frag-hi');moveTo(cliVis.at(-1));
+    await new Promise(r=>setTimeout(r,MOVE));cliVis.at(-1).classList.remove('frag-hi');
+
+    animDot(0,1,'#b71c1c');moveTo(rtAVis[0]);await new Promise(r=>setTimeout(r,MOVE));
+
+    // ROUTER-A: receives, decap, discovers MTU=1500 on WAN link
+    for(let i=0;i<rtAVis.length;i++){
+      activate(elRtA,rtAVis[i],'frag-hi');moveTo(rtAVis[i]);
+      const ln=rtAVis[i].dataset.layer;
+      await new Promise(r=>setTimeout(r,MOVE));
+      if(ln.includes('Fisico')) log(`🔀 Router-A [${phyName}]: ricezione pacchetto da Client`,'frag');
+      else if(ln.includes('Colleg')||ln.includes('Accesso')) log(`🔀 Router-A [${dlName}]: ETH ok, payload=3000B`,'frag');
+      else{
+        log(`🔀 Router-A [${netName}]: pacchetto=3000B, MTU link WAN=1500B → DEVO FRAMMENTARE!`,'warn');
+        log('   Calcolo: Frag1=1480B dati + 20B IP hdr (offset=0, MF=1)','frag');
+        log('   Calcolo: Frag2=1480B dati + 20B IP hdr (offset=185, MF=1)','frag');
+        log('   Calcolo: Frag3=20B dati + 20B IP hdr (offset=370, MF=0)','frag');
+      }
+      await wait();rtAVis[i].classList.remove('frag-hi');
+    }
+
+    // FRAGMENT 1
+    log('\n✂ FRAMMENTO 1/3: offset=0, MF=1, dati=1480B','frag');
+    pktEl.className='fragpkt';setContent('[FRAG 1/3 off=0 MF=1 1480B]');
+    if(netIdx>=0){activate(elRtA,rtAVis.at(-1),'frag-hi');moveTo(rtAVis.at(-1));}
+    log(`🔀 Router-A [${netName}]: costruisce Frag1 — aggiunge header IP: offset=0, More Fragments=1`,'frag');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    if(netIdx>=0)rtAVis.at(-1).classList.remove('frag-hi');
+
+    if(dlIdx>=0){
+      activate(elRtA,rtAVis[dlIdx===M.layers.length-1?0:1],'frag-hi');moveTo(rtAVis[dlIdx===M.layers.length-1?0:1]);
+      log(`🔀 Router-A [${dlName}]: frame ETH per Frag1 (1500B = 1480B dati + 20B hdr IP)`,'frag');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();rtAVis[dlIdx===M.layers.length-1?0:1].classList.remove('frag-hi');
+    }
+    activate(elRtA,rtAVis[0],'frag-hi');moveTo(rtAVis[0]);
+    animDot(1,2,'#b71c1c');
+    await new Promise(r=>setTimeout(r,MOVE));rtAVis[0].classList.remove('frag-hi');
+    // DCE
+    for(const le of dceVis){activate(elDce,le,'frag-hi');moveTo(le);log('📟 DCE: Frag1 in transito','dce');await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+    animDot(2,3,'#b71c1c');
+    // Rt-B
+    for(const le of rtBVis){activate(elRtB,le,'frag-hi');moveTo(le);await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+    animDot(3,4,'#b71c1c');moveTo(srvVis.at(-1));await new Promise(r=>setTimeout(r,MOVE));
+    // Server receives Frag1
+    if(netIdx>=0){
+      activate(elServer,srvVis[netIdx],'frag-hi');moveTo(srvVis[netIdx]);
+      log(`🖥 Server [${netName}]: riceve Frag1 (off=0, MF=1) — salva in buffer, aspetto altri frammenti…`,'frag');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();srvVis[netIdx].classList.remove('frag-hi');
+    }
+
+    // FRAGMENT 2
+    log('\n✂ FRAMMENTO 2/3: offset=185 (×8=1480B), MF=1, dati=1480B','frag');
+    pktEl.className='fragpkt';setContent('[FRAG 2/3 off=185 MF=1 1480B]');
+    activate(elRtA,rtAVis.at(-1),'frag-hi');moveTo(rtAVis.at(-1));
+    log(`🔀 Router-A [${netName}]: costruisce Frag2 — offset=185, More Fragments=1`,'frag');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    rtAVis.at(-1).classList.remove('frag-hi');
+
+    animate: {
+      animDot(1,2,'#b71c1c');
+      for(const le of dceVis){activate(elDce,le,'frag-hi');moveTo(le);log('📟 DCE: Frag2 in transito','dce');await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+      animDot(2,3,'#b71c1c');
+      for(const le of rtBVis){activate(elRtB,le,'frag-hi');moveTo(le);await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+      animDot(3,4,'#b71c1c');moveTo(srvVis.at(-1));await new Promise(r=>setTimeout(r,MOVE));
+    }
+
+    // FRAGMENT 3: the remaining 20 bytes of the original 2980-byte payload.
+    log('\n✂ FRAMMENTO 3/3: offset=370 (×8=2960B), MF=0, dati=20B','frag');
+    pktEl.className='fragpkt';setContent('[FRAG 3/3 off=370 MF=0 20B]');
+    activate(elRtA,rtAVis.at(-1),'frag-hi');moveTo(rtAVis.at(-1));
+    log(`🔀 Router-A [${netName}]: costruisce Frag3 — 20B dati + 20B header IP = 40B`,'frag');
+    await new Promise(r=>setTimeout(r,MOVE));await wait();
+    rtAVis.at(-1).classList.remove('frag-hi');
+    animDot(1,2,'#b71c1c');
+    for(const le of dceVis){activate(elDce,le,'frag-hi');moveTo(le);await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+    animDot(2,3,'#b71c1c');
+    for(const le of rtBVis){activate(elRtB,le,'frag-hi');moveTo(le);await new Promise(r=>setTimeout(r,MOVE*0.8));await wait();le.classList.remove('frag-hi');}
+    animDot(3,4,'#b71c1c');moveTo(srvVis.at(-1));await new Promise(r=>setTimeout(r,MOVE));
+    // Server reassembly
+    if(netIdx>=0){
+      activate(elServer,srvVis[netIdx],'frag-hi');moveTo(srvVis[netIdx]);
+      log(`🖥 Server [${netName}]: riceve Frag3 (MF=0) — ho tutti i frammenti, RIASSEMBLAGGIO!`,'frag');
+      log('   Riassembla: Frag1(0→1479) + Frag2(1480→2959) + Frag3(2960→2979) = 2980B dati + 20B header IP = 3000B ✅','frag');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();srvVis[netIdx].classList.remove('frag-hi');
+    }
+    // Deliver to upper layers
+    for(let i=netIdx-1;i>=0&&i>=0;i--){
+      if(!sim.running)break;
+      activate(elServer,srvVis[i],'frag-hi');moveTo(srvVis[i]);
+      log(`🖥 Server [${M.layers[i].name}]: pacchetto riassemblato consegnato ai livelli superiori`,'frag');
+      await new Promise(r=>setTimeout(r,MOVE));await wait();srvVis[i].classList.remove('frag-hi');
+    }
+
+    elServer.children[0]?.classList.add('final-glow');
+    notifyDelivery('📦 Pacchetto riassemblato e consegnato al Server!');
+    log('✅ Frammentazione e riassemblaggio completati!','success');
+    log('ℹ️  Il riassemblaggio avviene SEMPRE nel destinatario finale, MAI nei router intermedi','info');
+    log('ℹ️  Se un frammento si perde, il destinatario scarta tutti i frammenti del datagramma','info');
+    log('ℹ️  IPv6 non permette frammentazione nei router: usa Path MTU Discovery','warn');
+  }catch(e){log('⛔ Errore: '+e.message,'error');console.error(e);}
+  finally{sim.running=false;toggleCtrl(false);pktEl.style.opacity='0';}
+}
+
+// ─── SCENARIO BUILDER ────────────────────────────────
+// reqPort assente → costruisce una RICHIESTA: sp=porta effimera casuale del Client, dp=porta del servizio.
+// reqPort presente → costruisce la RISPOSTA corrispondente: sp=porta del servizio, dp=reqPort (la stessa
+// porta effimera usata dalla richiesta), così la coppia di porte risulta invertita, non duplicata (punto 2).
+function mkSc(label,data,proto,reqPort){
+  const isOSI=modelSel.value==='OSI';
+  const port=proto==='UDP'?53:80;
+  const isResponse=reqPort!=null;
+  const ephPort=isResponse?reqPort:Math.floor(Math.random()*10000+49152);
+  const sp=isResponse?port:ephPort;
+  const dp=isResponse?ephPort:port;
+  // UDP non riassembla (non c'è un flusso): elabora il singolo datagramma.
+  // TCP elabora il segmento e ricostruisce il flusso di byte a partire dai numeri di sequenza
+  // (l'operazione riguarda il flusso TCP, non il "riassemblaggio" di un singolo segmento).
+  const decProtoLog=proto==='UDP'?`Elabora datagramma UDP (porta ${dp})`:`Elabora segmento ${proto} e ricostruisce il flusso di byte (porta ${dp})`;
+  if(isOSI)return{name:label,proto,initialData:data,cls:'',ephPort,
+    headers:[{},{},{},{[`${proto}(${sp}→${dp})`]:`[${proto} sp:${sp} dp:${dp}]|`},
+             {'IP':`[IP src:192.168.1.10 dst:10.0.0.20 TTL:64]|`},
+             {'MAC':`[ETH src:Client dst:Rt-A]|`},{}],
+    trailers:['','','','','','|[FCS]',''],
+    encLogs:[`Genera ${proto==='UDP'?'DNS':'HTTP'}: "${data}"`,'Prepara i dati (nessuna cifratura TLS simulata)',
+             `Sessione aperta`,`Incapsula in ${proto}: sp:${sp} dp:${dp}`,
+             `IP hdr: src 192.168.1.10 dst 10.0.0.20 TTL=64`,
+             `Frame ETH: src=Client dst=Rt-A, FCS`,`Bit → cavo LAN`],
+    decLogs:[`Consegna a app: "${data}"`,`Elabora i dati ricevuti`,`Sessione ok`,
+             decProtoLog,`IP ok, rimuove hdr`,
+             `MAC ok, FCS ok, rimuove ETH`,`Segnale → bit → frame`]};
+  else return{name:label,proto,initialData:data,cls:'',ephPort,
+    headers:[{},{[`${proto}(${sp}→${dp})`]:`[${proto} sp:${sp} dp:${dp}]|`},
+             {'IP':`[IP src:192.168.1.10 dst:10.0.0.20 TTL:64]|`},
+             {'MAC':`[ETH src:Client dst:Rt-A]|`}],
+    trailers:['','','','|[FCS]'],
+    encLogs:[`Genera ${proto==='UDP'?'DNS':'HTTP'}: "${data}"`,
+             `Incapsula in ${proto}: sp:${sp} dp:${dp}`,`IP hdr TTL=64`,`ETH frame + bit`],
+    decLogs:[`Consegna app: "${data}"`,decProtoLog,`IP ok`,`ETH+FCS ok`]};
+}
+
+// ─── RUN SINGLE ───────────────────────────────────────
+async function runSingle(makeSc){
+  let gqOutcome=null;
+  if(errChk.checked && guidedErrChk.checked){ gqOutcome=await askGuidedError(); }
+  reset();sim.running=true;toggleCtrl(true);clearLog();
+  if(gqOutcome){
+    if(gqOutcome.correct) log('🎯 Modalità Errore Guidato: risposta CORRETTA — '+gqOutcome.label,'success');
+    else log('🎯 Modalità Errore Guidato: risposta ERRATA ('+gqOutcome.label+') — corretto: '+gqOutcome.correctLabel,'warn');
+  }
+  try{
+    const sc=makeSc();
+    scenarioName=sc.name;logBadge.textContent='Scenario: '+sc.name;
+    log('▶ '+sc.name,'info');
+    if(sc.pre)for(const fn of sc.pre){if(!sim.running)return;await fn();}
+    if(!sim.running)return;
+    const ok=await runFlow(sc,false);
+    if(!ok){log('⛔ Interrotto.','error');return;}
+    if(sc.proto==='TCP')await runAck(sc);
+    let responseDelivered=false;
+    if(sc.resp&&rtTog.checked&&sim.running){
+      log('── Risposta ──','info');
+      if(!await runFlow(sc.resp,true)){log('⛔ Interrotto.','error');return;}
+      if(sc.resp.proto==='TCP')await runAck(sc.resp,true);
+      responseDelivered=true;
+    }
+    // L'ultimo nodo a ricevere qualcosa è il Client se è stata eseguita anche la
+    // risposta, altrimenti il Server (che ha ricevuto solo la richiesta).
+    if(responseDelivered){
+      elClient.children[0]?.classList.add('final-glow');
+      notifyDelivery('📦 Risposta consegnata al Client!');
+    } else {
+      elServer.children[0]?.classList.add('final-glow');
+      notifyDelivery('📦 Pacchetto consegnato al Server!');
+    }
+    log('✅ Completato!','success');phase('ph-dec');
+  }catch(e){log('⛔ Errore: '+e.message,'error');console.error(e);}
+  finally{sim.running=false;toggleCtrl(false);pktEl.style.opacity='0';}
+}
+
+// ─── FULL SCENARIO ────────────────────────────────────
+$('btn-full').addEventListener('click',async()=>{
+  let gqOutcome=null;
+  if(errChk.checked && guidedErrChk.checked){ gqOutcome=await askGuidedError(); }
+  reset();sim.running=true;toggleCtrl(true);clearLog();
+  if(gqOutcome){
+    if(gqOutcome.correct) log('🎯 Modalità Errore Guidato: risposta CORRETTA — '+gqOutcome.label,'success');
+    else log('🎯 Modalità Errore Guidato: risposta ERRATA ('+gqOutcome.label+') — corretto: '+gqOutcome.correctLabel,'warn');
+  }
+
+  scenarioName='Navigazione Web Completa';
+  logBadge.textContent='Scenario: Navigazione Web';
+
+  log('🌐 === Navigazione Web Completa ===','info');
+
+  try{
+
+    phase('ph-arp');
+    log('── Fase 0: ARP ──','arp');
+
+    await runARP(false);
+    if(!sim.running)return;
+
+    reset(true);
+    sim.running=true;
+    toggleCtrl(true);
+
+    phase('ph-dns');
+    log('── Fase 1: DNS ──','info');
+
+    const dnsReq=mkSc('DNS','esempio.com?','UDP');
+    if(!await runFlow(dnsReq,false))return;
+
+    log('── Fase 2: risposta DNS (UDP) ──','info');
+    if(!await runFlow(mkSc('DNS risposta','esempio.com → 10.0.0.20','UDP',dnsReq.ephPort),true))return;
+
+    sim.running=true;
+    toggleCtrl(true);
+
+    pktEl.style.opacity='0';
+    await new Promise(r=>setTimeout(r,500));
+
+    await runHandshake();
+    if(!sim.running)return;
+
+    await new Promise(r=>setTimeout(r,300));
+
+    log('── Fase 3: HTTP GET ──','info');
+
+    const sc=mkSc('HTTP GET','GET /index.html HTTP/1.1','TCP');
+
+    if(!await runFlow(sc,false))return;
+
+    await runAck(sc);
+
+    sim.running=true;
+    toggleCtrl(true);
+
+    log('── Fase 5: HTTP 200 OK ──','info');
+    if(!rtTog.checked)
+      log('ℹ️  "Naviga Web" mostra sempre anche la risposta del server (DNS e HTTP): navigare il Web significa anche riceverla. L\'opzione "Round-trip" qui non si applica — riguarda solo gli scenari singoli Web/DNS.','info');
+
+    const resp=mkSc('HTTP 200 OK','200 OK [HTML]','TCP',sc.ephPort);
+
+    if(!await runFlow(resp,true))return;
+    await runAck(resp,true);
+
+    sim.running=true;
+    toggleCtrl(true);
+
+    elClient.children[0]?.classList.add('final-glow');
+    notifyDelivery('🎉 Navigazione Web completata!');
+
+    log('🎉 Navigazione Web completata!','success');
+
+  }
+  catch(e){
+    log('⛔ Errore: '+e.message,'error');
+    console.error(e);
+  }
+  finally{
+    sim.running=false;
+    toggleCtrl(false);
+    pktEl.style.opacity='0';
+  }
+});
+
+// ─── BUTTONS ──────────────────────────────────────────
+$('btn-web').addEventListener('click',()=>runSingle(()=>{
+  const sc=mkSc('HTTP Web','GET /index.html HTTP/1.1','TCP');
+  sc.pre=[()=>runHandshake()];sc.resp=mkSc('HTTP 200 OK','200 OK [HTML]','TCP',sc.ephPort);return sc;
+}));
+$('btn-dns').addEventListener('click',()=>runSingle(()=>{
+  const sc=mkSc('DNS','esempio.com?','UDP');
+  sc.resp=mkSc('DNS risposta','esempio.com → 10.0.0.20','UDP',sc.ephPort);return sc;
+}));
+$('btn-arp').addEventListener('click',runARP);
+$('btn-icmp').addEventListener('click',()=>runICMP('ping'));
+$('btn-tr').addEventListener('click',()=>runICMP('traceroute'));
+$('btn-frag').addEventListener('click',runFragmentation);
+
+btnPause.addEventListener('click',()=>{
+  if(!sim.running)return;
+  sim.paused=!sim.paused;
+  btnPause.textContent=sim.paused?'▶ Riprendi':'⏸ Pausa';
+  btnStep.disabled=!sim.paused;if(!sim.paused)resolveWait();
+});
+btnStep.addEventListener('click',resolveWait);
+pktEl.addEventListener('mouseenter',()=>{if(sim.running&&!sim.paused)sim.hovered=true;});
+pktEl.addEventListener('mouseleave',()=>{sim.hovered=false;resolveWait();});
+pktEl.addEventListener('click',showInspector);
+$('close-info').addEventListener('click',()=>infoPanel.classList.remove('open'));
+$('close-insp').addEventListener('click',()=>inspPanel.classList.remove('open'));
+
+// ══════════════════════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════════════════════
+const QUESTIONS=[
+  // OSI
+  {cat:'ISO/OSI',q:'Quanti livelli ha il modello ISO/OSI?',opts:['4','5','7','8'],ans:2,
+   exp:'Il modello ISO/OSI ha 7 livelli, dal Fisico (L1) all\'Applicazione (L7).'},
+  {cat:'ISO/OSI',q:'Quale livello OSI si occupa dell\'indirizzamento logico (IP) e del routing?',
+   opts:['L2 Collegamento Dati','L3 Rete','L4 Trasporto','L5 Sessione'],ans:1,
+   exp:'Il livello L3 Rete gestisce l\'indirizzamento IP e il routing tra reti diverse.'},
+  {cat:'ISO/OSI',q:'Qual è la PDU del livello 2 (Collegamento Dati)?',
+   opts:['Bit','Pacchetto','Frame','Segmento'],ans:2,
+   exp:'Al livello 2 la PDU si chiama Frame. Include header MAC, payload e trailer FCS/CRC.'},
+  {cat:'ISO/OSI',q:'Il livello 4 (Trasporto) utilizza TCP per garantire:',
+   opts:['Velocità massima senza controllo errori','Consegna affidabile con controllo flusso e ACK','Solo indirizzamento IP','Cifratura dei dati'],ans:1,
+   exp:'TCP al livello 4 garantisce consegna affidabile tramite handshake, numeri di sequenza e ACK.'},
+  {cat:'ISO/OSI',q:'Quale livello OSI corrisponde al livello "Internet" del modello TCP/IP?',
+   opts:['L2 Collegamento','L3 Rete','L4 Trasporto','L7 Applicazione'],ans:1,
+   exp:'Il livello Internet del TCP/IP corrisponde principalmente al L3 Rete dell\'OSI: entrambi gestiscono l\'indirizzamento IP e il routing.'},
+  {cat:'ISO/OSI',q:'Il livello 6 (Presentazione) è responsabile di:',
+   opts:['Routing tra reti','Traduzione formati, cifratura TLS e compressione','Stabilire sessioni TCP','Trasmissione bit fisici'],ans:1,
+   exp:'Il livello 6 traduce i formati dati, gestisce cifratura/decifratura (TLS) e compressione.'},
+  {cat:'ISO/OSI',q:'Quale dispositivo opera principalmente al livello 3 (Rete)?',
+   opts:['Hub','Switch','Router','Repeater'],ans:2,
+   exp:'Il Router opera al livello 3: legge gli indirizzi IP, consulta le routing table e instrada i pacchetti.'},
+  // TCP/IP
+  {cat:'TCP/IP',q:'Il modello TCP/IP ha quanti livelli?',opts:['3','4','5','7'],ans:1,
+   exp:'Il modello TCP/IP ha 4 livelli: Accesso alla Rete, Internet, Trasporto e Applicazione.'},
+  {cat:'TCP/IP',q:'Il livello "Accesso alla Rete" del TCP/IP corrisponde a quali livelli OSI?',
+   opts:['Solo L1','Solo L2','L1 + L2','L1 + L2 + L3'],ans:2,
+   exp:'Il livello Accesso alla Rete del TCP/IP incorpora OSI L1 (Fisico) + L2 (Collegamento Dati).'},
+  {cat:'TCP/IP',q:'Quale protocollo di trasporto è senza connessione e non garantisce la consegna?',
+   opts:['TCP','SCTP','UDP','PPP'],ans:2,
+   exp:'UDP è senza connessione e non offre consegna affidabile, ordine o ritrasmissioni proprie. Ha meno informazioni di controllo; non è sempre più veloce di TCP.'},
+  // ARP
+  {cat:'ARP',q:'ARP (Address Resolution Protocol) serve a:',
+   opts:['Trovare il percorso IP verso una rete remota','Tradurre un indirizzo IP nel corrispondente indirizzo MAC','Assegnare dinamicamente un indirizzo IP','Cifrare i pacchetti in transito'],ans:1,
+   exp:'ARP traduce un indirizzo IP (L3) nel corrispondente MAC (L2) sul segmento LAN locale.'},
+  {cat:'ARP',q:'La ARP Request viene inviata come:',
+   opts:['Unicast verso l\'IP destinazione','Multicast verso tutti i router','Broadcast Ethernet FF:FF:FF:FF:FF:FF','Anycast verso il gateway'],ans:2,
+   exp:'La ARP Request è un broadcast Ethernet: ogni nodo del segmento la riceve, ma solo chi ha quell\'IP risponde.'},
+  {cat:'ARP',q:'Quando il Client vuole inviare dati a un Server su un\'altra rete, ARP risolve il MAC di:',
+   opts:['Il Server di destinazione','Il DNS server','Il default gateway (Router)','Il broadcast della rete'],ans:2,
+   exp:'ARP è locale: il Client risolve il MAC del proprio gateway (Router), non del Server remoto.'},
+  // ICMP
+  {cat:'ICMP',q:'ICMP opera a quale livello OSI?',
+   opts:['L2 Collegamento','L3 Rete','L4 Trasporto','L7 Applicazione'],ans:1,
+   exp:'ICMP è incapsulato direttamente in IP (Protocol ID=1) e opera al livello 3 Rete. Non usa TCP/UDP.'},
+  {cat:'ICMP',q:'Il comando "ping" usa quale tipo di messaggio ICMP?',
+   opts:['ICMP Redirect','ICMP Time Exceeded','ICMP Echo Request / Echo Reply','ICMP Destination Unreachable'],ans:2,
+   exp:'Ping usa ICMP Echo Request (tipo 8) inviato al destinatario, che risponde con Echo Reply (tipo 0).'},
+  {cat:'ICMP',q:'Nel traceroute, il Router risponde con "ICMP Time Exceeded" quando:',
+   opts:['Il pacchetto è troppo grande','Il TTL del pacchetto raggiunge 0','Il MAC destinazione è sconosciuto','La porta TCP è chiusa'],ans:1,
+   exp:'Il router decrementa il TTL; quando raggiunge 0, scarta il pacchetto e invia ICMP Time Exceeded all\'origine.'},
+  {cat:'ICMP',q:'Il TTL (Time To Live) nel traceroute viene usato per:',
+   opts:['Misurare la latenza di ogni hop','Limitare il numero di connessioni TCP','Identificare ogni router sul percorso facendolo rispondere','Frammentare i pacchetti grandi'],ans:2,
+   exp:'Traceroute invia pacchetti con TTL=1,2,3… Ogni router che scarta (TTL=0) risponde con la sua identità, rivelando il percorso.'},
+  // FRAGMENTATION
+  {cat:'Frammentazione IP',q:'La frammentazione IP avviene quando:',
+   opts:['Il TTL raggiunge 0','Il pacchetto supera l\'MTU del link successivo','Il server non risponde al ping','Il MAC destinazione non è in tabella ARP'],ans:1,
+   exp:'Se un pacchetto IP supera l\'MTU (Maximum Transmission Unit) dell\'interfaccia di uscita, il router lo frammenta.'},
+  {cat:'Frammentazione IP',q:'Chi effettua il RIASSEMBLAGGIO dei frammenti IP?',
+   opts:['Il primo router della rete','Ogni router intermedio sul percorso','Solo il destinatario finale','Il DNS server'],ans:2,
+   exp:'Il riassemblaggio avviene SOLO nel destinatario finale (RFC 791). I router intermedi non riassemblano.'},
+  {cat:'Frammentazione IP',q:'Il flag "Don\'t Fragment" (DF=1) in un header IP significa:',
+   opts:['Il pacchetto può essere frammentato liberamente','Il router deve scartare e inviare ICMP "Fragmentation Needed" se il pacchetto è troppo grande','Il pacchetto è già un frammento','Il TTL è impostato a 0'],ans:1,
+   exp:'Con DF=1, se il pacchetto supera l\'MTU il router lo SCARTA e invia ICMP Fragmentation Needed. Usato da Path MTU Discovery.'},
+  {cat:'Frammentazione IP',q:'IPv6 permette la frammentazione nei router intermedi?',
+   opts:['Sì, come IPv4','No — usa Path MTU Discovery; solo il mittente può frammentare','Solo per pacchetti con TTL>64','Sì, ma solo su link WAN'],ans:1,
+   exp:'IPv6 NON permette frammentazione nei router. Il mittente usa Path MTU Discovery per determinare l\'MTU minimo del percorso.'},
+  // DCE/TOPOLOGIA
+  {cat:'Topologia WAN',q:'Il DCE (Data Circuit-terminating Equipment) opera a quale livello OSI?',
+   opts:['L1 Fisico','L2 Collegamento Dati','L3 Rete','L4 Trasporto'],ans:0,
+   exp:'Il DCE (modem, CSU/DSU) opera SOLO a L1 Fisico: rigenera o adatta il segnale sul link WAN seriale. Non legge IP né MAC.'},
+  {cat:'Topologia WAN',q:'Nella topologia Client→Router-A→DCE→Router-B→Server, il Router aggiorna:',
+   opts:['Solo l\'indirizzo IP sorgente','Il MAC sorgente e destinazione ad ogni hop','Il numero di sequenza TCP','Il payload applicativo'],ans:1,
+   exp:'Il router costruisce un nuovo frame per ogni collegamento: Ethernet con nuovi MAC sulle LAN, frame seriale sul tratto WAN. Gli indirizzi IP restano invariati senza NAT; il TTL diminuisce.'},
+  {cat:'Topologia WAN',q:'Qual è la differenza tra un Router e uno Switch nella gestione dei pacchetti?',
+   opts:['Lo Switch legge gli indirizzi IP, il Router legge i MAC','Il Router opera a L3 (IP), lo Switch a L2 (MAC)','Sono equivalenti','Lo Switch può frammentare i pacchetti'],ans:1,
+   exp:'Il Router opera a L3: legge IP, instrada tra reti diverse, decrementa TTL. Lo Switch opera a L2: forwarding basato su MAC address table, trasparente agli IP.'},
+];
+
+let qIdx=0,qScore=0,qAnswered=false;
+const letters=['A','B','C','D'];
+
+function renderQuiz(){
+  if(qIdx>=QUESTIONS.length){showResult();return;}
+  const q=QUESTIONS[qIdx];
+  qAnswered=false;
+  $('q-next').style.display='none';
+  $('q-nav-info').textContent=`Domanda ${qIdx+1} di ${QUESTIONS.length}`;
+  $('q-prog').style.width=`${(qIdx/QUESTIONS.length)*100}%`;
+  $('q-score').textContent=`${qScore}/${qIdx}`;
+  $('q-container').innerHTML=`
+    <span class="quiz-cat-badge">${q.cat}</span>
+    <div class="quiz-q">${q.q}</div>
+    <div class="quiz-opts">
+      ${q.opts.map((o,i)=>`
+        <div class="quiz-opt" id="qo-${i}" onclick="answerQ(${i})">
+          <span class="opt-letter">${letters[i]}</span>${o}
+        </div>`).join('')}
+    </div>
+    <div class="quiz-feedback" id="q-fb"></div>`;
+}
+
+window.answerQ=function(chosen){
+  if(qAnswered)return;
+  qAnswered=true;
+  const q=QUESTIONS[qIdx];
+  document.querySelectorAll('.quiz-opt').forEach(o=>o.classList.add('answered'));
+  const fb=$('q-fb');
+  if(chosen===q.ans){
+    qScore++;
+    $(`qo-${chosen}`).classList.add('correct');
+    fb.className='quiz-feedback show fb-ok';
+    fb.innerHTML=`✅ <strong>Corretto!</strong> ${q.exp}`;
+  } else {
+    $(`qo-${chosen}`).classList.add('wrong');
+    $(`qo-${q.ans}`).classList.add('correct');
+    fb.className='quiz-feedback show fb-ko';
+    fb.innerHTML=`❌ <strong>Sbagliato.</strong> ${q.exp}`;
+  }
+  $('q-score').textContent=`${qScore}/${qIdx+1}`;
+  $('q-next').style.display='block';
+};
+
+$('q-next').addEventListener('click',()=>{qIdx++;renderQuiz();});
+$('q-restart').addEventListener('click',()=>{qIdx=0;qScore=0;qAnswered=false;renderQuiz();});
+
+function showResult(){
+  const perc=Math.round((qScore/QUESTIONS.length)*100);
+  const g=perc>=90?{v:'10',c:'#28a745',m:'Eccellente! Preparazione ottima 🎉'}:
+           perc>=75?{v:'8',c:'#0056b3',m:'Molto bene! Qualche lacuna da colmare.'}:
+           perc>=60?{v:'6',c:'#fd7e14',m:'Sufficiente. Ripassare i capitoli deboli.'}:
+                    {v:'4',c:'#dc3545',m:'Insufficiente. Ripassare tutto il materiale.'};
+  $('q-prog').style.width='100%';
+  $('q-score').textContent=`${qScore}/${QUESTIONS.length}`;
+  $('q-container').innerHTML=`
+    <div class="quiz-result">
+      <div class="score-big" style="color:${g.c}">${perc}%</div>
+      <div class="grade" style="color:${g.c}">Voto: ${g.v}/10</div>
+      <p style="margin:8px 0">${g.m}</p>
+      <p style="margin-top:10px;color:#888;font-size:.78rem">Risposte corrette: ${qScore} / ${QUESTIONS.length}</p>
+      <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+        ${[...new Set(QUESTIONS.map(q=>q.cat))].map(cat=>`<span class="chip">${cat}</span>`).join('')}
+      </div>
+    </div>`;
+  $('q-nav-info').textContent='Simulazione completata';
+  $('q-next').style.display='none';
+  saveQuizAttempt(perc,g.v);
+}
+
+// ─── STORICO QUIZ (localStorage) ───────────────────────
+const QUIZ_HISTORY_KEY='netlab_quiz_history_v1';
+function loadQuizHistory(){
+  try{return JSON.parse(safeStorage.getItem(QUIZ_HISTORY_KEY))||[];}
+  catch(e){return [];}
+}
+function saveQuizAttempt(perc,voto){
+  try{
+    const hist=loadQuizHistory();
+    hist.push({date:new Date().toLocaleString('it'),perc,voto,score:qScore,total:QUESTIONS.length});
+    safeStorage.setItem(QUIZ_HISTORY_KEY,JSON.stringify(hist.slice(-30)));
+  }catch(e){/* localStorage non disponibile: lo storico non viene salvato */}
+  renderQuizHistory();
+}
+function renderQuizHistory(){
+  const wrap=$('q-history-list');if(!wrap)return;
+  const hist=loadQuizHistory();
+  if(!hist.length){wrap.innerHTML='<p style="font-size:.76rem;color:#888">Nessun tentativo ancora registrato. Completa un quiz per vedere qui il tuo storico.</p>';return;}
+  const best=Math.max(...hist.map(h=>h.perc));
+  wrap.innerHTML=`
+    <p style="font-size:.76rem;color:#555;margin-bottom:7px">Miglior risultato: <b style="color:#0046a8">${best}%</b> · Tentativi registrati: ${hist.length}</p>
+    <table class="layer-map-table"><thead><tr><th>Data</th><th>Punteggio</th><th>%</th><th>Voto</th></tr></thead>
+    <tbody>${[...hist].reverse().slice(0,15).map(h=>
+      `<tr><td>${h.date}</td><td>${h.score}/${h.total}</td><td>${h.perc}%</td><td>${h.voto}/10</td></tr>`).join('')}
+    </tbody></table>`;
+}
+$('q-history-clear').addEventListener('click',()=>{
+  if(confirm('Cancellare tutto lo storico dei tentativi salvato su questo browser?')){
+    try{safeStorage.removeItem(QUIZ_HISTORY_KEY);}catch(e){}
+    renderQuizHistory();
+  }
+});
+renderQuizHistory();
+
+// ─── PDF EXPORT ───────────────────────────────────────
+$('pdf-btn').addEventListener('click',()=>{
+  const ts=new Date().toLocaleString('it');
+  const mName=modelSel.value==='OSI'?'ISO/OSI (7 Livelli)':'TCP/IP (4 Livelli)';
+  // "Naviga Web" include sempre richiesta e risposta (DNS e HTTP), indipendentemente
+  // dall'opzione Round-trip: per non suggerire il contrario, il report lo segnala
+  // esplicitamente invece di mostrare solo lo stato (eventualmente disattivato) del toggle.
+  const isFullNav=scenarioName==='Navigazione Web Completa';
+  const rtValue=isFullNav
+    ?'N/D — "Naviga Web" include sempre richiesta e risposta'
+    :(rtTog.checked?'Sì':'No');
+  const lRows=M.layers.map(l=>`<tr><td style="font-weight:700;color:#0046a8">L${l.id}</td><td>${l.name}</td><td>${l.pdu}</td><td>${(l.protos||[]).slice(0,3).join(', ')}</td></tr>`).join('');
+  const logRows=[...logEntries].reverse().map(e=>{const c={error:'#c0392b',success:'#1a7a3a',info:'#1a5276',warn:'#7d6608',ack:'#8e2060',dce:'#6c3483',icmp:'#006064',arp:'#4a148c',frag:'#7f0000'}[e.cls]||'#333';return`<tr><td style="color:#888;width:70px">${e.ts}</td><td style="color:${c}">${e.msg.replace(/</g,'&lt;')}</td></tr>`;}).join('');
+  const w=window.open('','_blank','width=840,height=950');
+  if(!w){showToast('Consenti le finestre popup per aprire il report e salvarlo in PDF.');return;}
+  w.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>Report — ${scenarioName}</title>
+<style>body{font-family:Arial,sans-serif;margin:0;padding:22px 30px;color:#1a2030;}
+h1{color:#0046a8;border-bottom:3px solid #0046a8;padding-bottom:8px;font-size:1.35rem;}
+h2{color:#0056b3;font-size:1rem;margin-top:18px;}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;background:#f0f4ff;border:1px solid #c8d8f0;border-radius:7px;padding:11px 14px;margin:10px 0 16px;font-size:.83rem;}
+.meta b{color:#0046a8;}table{width:100%;border-collapse:collapse;margin-top:7px;font-size:.78rem;}
+th{background:#0046a8;color:#fff;padding:5px 9px;text-align:left;}
+td{padding:4px 9px;border-bottom:1px solid #e0e8f4;vertical-align:top;}
+tr:nth-child(even)td{background:#f7f9ff;}
+.box{background:#f7f9ff;border:1px solid #d0daf0;border-radius:6px;padding:10px 14px;font-size:.81rem;line-height:1.7;margin-top:7px;}
+.footer{margin-top:24px;font-size:.67rem;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:9px;}
+@media print{button{display:none;}}</style></head><body>
+<h1>🔬 NetLab — Report di Simulazione v5.6</h1>
+<div class="meta">
+  <div><b>Scenario:</b> ${scenarioName}</div><div><b>Modello:</b> ${mName}</div>
+  <div><b>Data/Ora:</b> ${ts}</div><div><b>Errore FCS:</b> ${errChk.checked?'Sì':'No'}</div>
+  <div${isFullNav?' style="grid-column:1/-1"':''}><b>Round-trip:</b> ${rtValue}</div>
+  <div><b>Topologia:</b> Client → Router-A → DCE → Router-B → Server</div>
+</div>
+<h2>🗺 Topologia</h2>
+<div class="box">
+<b>Client</b> ←LAN→ <b>Router-A</b> (L1+L2+L3) ←WAN→ <b>DCE</b> (L1 solo: conversione segnale) ←WAN→ <b>Router-B</b> (L1+L2+L3) ←LAN→ <b>Server</b><br>
+ARP risolve IP→MAC localmente. ICMP opera a L3. La frammentazione avviene nel Router se pacchetto > MTU; il riassemblaggio solo nel destinatario.
+</div>
+<h2>📐 Livelli ${mName}</h2>
+<table><thead><tr><th>#</th><th>Nome</th><th>PDU</th><th>Protocolli</th></tr></thead><tbody>${lRows}</tbody></table>
+<h2>📋 Log</h2>
+<table><thead><tr><th style="width:70px">Orario</th><th>Evento</th></tr></thead>
+<tbody>${logRows||'<tr><td colspan="2" style="color:#888">Nessun evento.</td></tr>'}</tbody></table>
+<div class="footer">NetLab ISO/OSI & TCP/IP Simulator v5.6 · ${ts}</div>
+<script>setTimeout(()=>window.print(),400);<\/script></body></html>`);
+  w.document.close();
+});
+
+// ─── INIT ─────────────────────────────────────────────
+modelSel.addEventListener('change',initialize);
+window.addEventListener('resize',()=>setTimeout(drawDiagram,60));
+initialize();
+renderQuiz();
+
+}); // DOMContentLoaded
+</script>
+<footer>
+  <p>
+    &copy; 2026 Domenico Capano – LearningObjects.org.
+    Quest'opera è distribuita con licenza
+    <a href="https://creativecommons.org/licenses/by/4.0/deed.it" target="_blank" rel="license noopener noreferrer">
+      Creative Commons Attribution 4.0 International (CC BY 4.0)
+    </a>.
+  </p>
+</footer>
+</body>
+</html>
